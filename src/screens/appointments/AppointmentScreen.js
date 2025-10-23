@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { fetchAppointments, cancelAppointment } from '../../controllers/appointmentController';
-import { styles } from './appointmentStyles';
+import styles from './appointmentStyles';
 
 export default function AppointmentScreen() {
   const [appointments, setAppointments] = useState([]);
