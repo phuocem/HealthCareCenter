@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, ActivityIndicator } from 'react-native';
 import { supabase } from '../../api/supabase';
+import styles from './DoctorListStyles';
 
 export default function DoctorListScreen() {
   const [doctors, setDoctors] = useState([]);
@@ -12,11 +13,10 @@ export default function DoctorListScreen() {
       try {
         const { data, error } = await supabase
           .from('doctors')
-.select('id, name, specialization')
+          .select('id, name, specialization')
           .order('id', { ascending: true });
 
         if (error) throw error;
-
         setDoctors(data || []);
       } catch (error) {
         console.error('Lỗi tải danh sách bác sĩ:', error.message);
@@ -55,28 +55,10 @@ export default function DoctorListScreen() {
         renderItem={({ item }) => (
           <View style={styles.card}>
             <Text style={styles.name}>{item.name}</Text>
-            <Text style={styles.specialty}>{item.specialty}</Text>
+            <Text style={styles.specialty}>{item.specialization}</Text>
           </View>
         )}
       />
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff', padding: 16 },
-  title: { fontSize: 20, fontWeight: 'bold', marginBottom: 12 },
-  card: {
-    backgroundColor: '#f9f9f9',
-    padding: 16,
-    borderRadius: 10,
-    marginBottom: 10,
-  },
-  name: { fontSize: 16, fontWeight: '600' },
-  specialty: { color: '#555' },
-  center: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});
