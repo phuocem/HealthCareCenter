@@ -1,23 +1,36 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import AuthStack from './AuthStack';
+import { supabase } from '../api/supabase';
+import AuthStack from './AuthNavigator';
 import MainTabs from './MainTabs';
-import { useUserStore } from '../store/useUserStore';
-
-const Stack = createNativeStackNavigator();
+import DoctorTabs from './DoctorTabs';
+import AdminTabs from './AdminTabs';
+import { getUserRole } from '../controllers/userController';
 
 export default function AppNavigator() {
-  const { user } = useUserStore();
+  const [role, setRole] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const load = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const roleName = await getUserRole(user.id);
+        setRole(roleName);
+      }
+      setLoading(false);
+    };
+    load();
+  }, []);
+
+  if (loading) return null;
+
   return (
     <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {user ? (
-          <Stack.Screen name="MainTabs" component={MainTabs} />
-        ) : (
-          <Stack.Screen name="AuthStack" component={AuthStack} />
-        )}
-      </Stack.Navigator>
+      {!role && <AuthStack />}
+      {role === 'patient' && <MainTabs />}
+      {role === 'doctor' && <DoctorTabs />}
+      {role === 'admin' && <AdminTabs />}
     </NavigationContainer>
   );
 }

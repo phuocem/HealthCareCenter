@@ -1,9 +1,10 @@
+// src/navigation/MainTabs.js
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import HomeScreen from '../screens/home/HomeScreen';
-import DoctorListScreen from '../screens/doctors/DoctorListScreen';
-import AppointmentScreen from '../screens/appointments/AppointmentScreen';
 import { Ionicons } from '@expo/vector-icons';
+import HomeScreen from '../screens/patient/HomeScreen';
+import AppointmentScreen from '../screens/patient/AppointmentScreen';
+import ProfileScreen from '../screens/patient/ProfileScreen';
 
 const Tab = createBottomTabNavigator();
 
@@ -11,20 +12,22 @@ export default function MainTabs() {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
+        headerShown: false,
+        tabBarActiveTintColor: '#007BFF',
+        tabBarInactiveTintColor: 'gray',
+        tabBarStyle: { paddingBottom: 5, height: 60 },
         tabBarIcon: ({ color, size }) => {
           let iconName;
-          if (route.name === 'Home') iconName = 'home';
-          else if (route.name === 'Doctors') iconName = 'medkit';
-          else if (route.name === 'Appointments') iconName = 'calendar';
+          if (route.name === 'Trang chủ') iconName = 'home';
+          else if (route.name === 'Lịch khám') iconName = 'calendar';
+          else if (route.name === 'Hồ sơ') iconName = 'person';
           return <Ionicons name={iconName} size={size} color={color} />;
         },
-        tabBarActiveTintColor: '#007AFF',
-        tabBarInactiveTintColor: 'gray',
       })}
     >
-      <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Doctors" component={DoctorListScreen} />
-      <Tab.Screen name="Appointments" component={AppointmentScreen} />
+      <Tab.Screen name="Trang chủ" component={HomeScreen} />
+      <Tab.Screen name="Lịch khám" component={AppointmentScreen} />
+      <Tab.Screen name="Hồ sơ" component={ProfileScreen} />
     </Tab.Navigator>
   );
 }
