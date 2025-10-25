@@ -1,6 +1,5 @@
 import { supabase } from '../api/supabase';
 
-// đây là cái để lấy danh sách bác sĩ
 export async function fetchDoctors() {
   const { data, error } = await supabase
     .from('doctors')

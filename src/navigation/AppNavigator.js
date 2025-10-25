@@ -1,36 +1,28 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import { supabase } from '../api/supabase';
-import AuthStack from './AuthNavigator';
-import MainTabs from './MainTabs';
-import DoctorTabs from './DoctorTabs';
+import { createStackNavigator } from '@react-navigation/stack';
+import AuthNavigator from './AuthNavigator';
+import RoleRedirect from '../screens/auth/RoleRedirect';
 import AdminTabs from './AdminTabs';
-import { getUserRole } from '../controllers/userController';
+import DoctorTabs from './DoctorTabs';
+import PatientTabs from './PatientTabs';
+import ReceptionTabs from './ReceptionTabs';
+import AccountantTabs from './AccountantTabs';
+
+const Stack = createStackNavigator();
 
 export default function AppNavigator() {
-  const [role, setRole] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const load = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const roleName = await getUserRole(user.id);
-        setRole(roleName);
-      }
-      setLoading(false);
-    };
-    load();
-  }, []);
-
-  if (loading) return null;
-
   return (
     <NavigationContainer>
-      {!role && <AuthStack />}
-      {role === 'patient' && <MainTabs />}
-      {role === 'doctor' && <DoctorTabs />}
-      {role === 'admin' && <AdminTabs />}
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="Auth" component={AuthNavigator} />
+        <Stack.Screen name="RoleRedirect" component={RoleRedirect} />
+        <Stack.Screen name="AdminTabs" component={AdminTabs} />
+        <Stack.Screen name="DoctorTabs" component={DoctorTabs} />
+        <Stack.Screen name="PatientTabs" component={PatientTabs} />
+        <Stack.Screen name="ReceptionTabs" component={ReceptionTabs} />
+        <Stack.Screen name="AccountantTabs" component={AccountantTabs} />
+      </Stack.Navigator>
     </NavigationContainer>
   );
 }

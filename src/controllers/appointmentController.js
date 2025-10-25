@@ -1,6 +1,5 @@
 import { supabase } from '../api/supabase';
 
-// đây là cái để lấy lịch khám
 export async function fetchAppointments() {
   const { data, error } = await supabase
     .from('appointments')
@@ -25,7 +24,6 @@ export async function fetchAppointments() {
   return data || [];
 }
 
-// đây là cái để hủy lịch khám
 export async function cancelAppointment(id) {
   const { error } = await supabase
     .from('appointments')

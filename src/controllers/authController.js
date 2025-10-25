@@ -1,4 +1,3 @@
-// src/controllers/authController.js
 import { supabase } from '../api/supabase';
 
 export const signIn = async (email, password) => {
@@ -15,19 +14,20 @@ export const signUp = async (email, password, fullName) => {
     email,
     password,
     options: {
+      emailRedirectTo: null,
       data: { full_name: fullName },
     },
   });
   if (error) throw error;
-  return data;
+  return data.user;
 };
 
 export const getUserProfile = async (userId) => {
   const { data, error } = await supabase
     .from('user_profiles')
-    .select('id, full_name, role_id, roles(name)')
+    .select('*, roles(*)')
     .eq('id', userId)
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
 
