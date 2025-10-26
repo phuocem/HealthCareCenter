@@ -1,4 +1,3 @@
-// src/styles/patient/patientDrawerStyles.js
 import { StyleSheet, Platform } from 'react-native';
 
 export const patientDrawerStyles = StyleSheet.create({

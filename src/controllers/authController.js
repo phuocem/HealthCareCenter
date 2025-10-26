@@ -1,8 +1,5 @@
 import { supabase } from '../api/supabase';
 
-/**
- * Đăng nhập
- */
 export const signIn = async (email, password) => {
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
@@ -12,14 +9,9 @@ export const signIn = async (email, password) => {
   return data;
 };
 
-/**
- * Đăng ký tài khoản mới
- */
 export const signUp = async (email, password, fullName, phone, dateOfBirth, gender) => {
-  // Log for debugging
   console.log('signUp called with:', { email, password, fullName, phone, dateOfBirth, gender });
 
-  // Normalize gender
   const normalizedGender =
     gender?.toLowerCase().includes('nam')
       ? 'male'
@@ -27,18 +19,16 @@ export const signUp = async (email, password, fullName, phone, dateOfBirth, gend
       ? 'female'
       : 'other';
 
-  // Validate dateOfBirth format (yyyy-mm-dd)
   let formattedDate = null;
   if (dateOfBirth) {
     const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
     if (dateRegex.test(dateOfBirth)) {
       formattedDate = dateOfBirth;
     } else {
-      console.warn('⚠️ Ngày sinh không hợp lệ:', dateOfBirth);
+      console.warn('Ngày sinh không hợp lệ:', dateOfBirth);
     }
   }
 
-  // Register user
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -56,7 +46,6 @@ export const signUp = async (email, password, fullName, phone, dateOfBirth, gend
   if (error) throw error;
   const user = data.user;
 
-  // Insert into user_profiles
   if (user) {
     const { error: profileError } = await supabase
       .from('user_profiles')
@@ -66,7 +55,7 @@ export const signUp = async (email, password, fullName, phone, dateOfBirth, gend
       );
 
     if (profileError) {
-      console.error('❌ Lỗi khi chèn vào user_profiles:', profileError);
+      console.error('Lỗi khi chèn vào user_profiles:', profileError);
       throw profileError;
     }
   }
@@ -74,9 +63,6 @@ export const signUp = async (email, password, fullName, phone, dateOfBirth, gend
   return user;
 };
 
-/**
- * Lấy thông tin hồ sơ người dùng
- */
 export const getUserProfile = async (userId) => {
   const { data, error } = await supabase
     .from('user_profiles')

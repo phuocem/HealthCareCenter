@@ -1,30 +1,24 @@
-// src/shared/colors.js
 export const Colors = {
-  /** 🎨 Màu chính */
-  primary: '#007AFF', // xanh iOS
-  primaryLight: '#00C6FF',
-  primaryDark: '#0051A8',
+  primary: '#007AFF',
+  secondary: '#00C6FF',
 
-  /** ⚪ Nền & text */
-  background: '#F9FAFB',
-  white: '#FFFFFF',
-  black: '#000000',
-  text: '#111827',
-  textSecondary: '#6B7280',
-
-  /** 🩺 Các loại trạng thái */
-  success: '#22C55E',
-  warning: '#FACC15',
-  error: '#EF4444',
-  info: '#3B82F6',
-
-  /** 🧩 Màu phụ */
-  border: '#E5E7EB',
+  background: '#F8FAFC',
   card: '#FFFFFF',
-  shadow: 'rgba(0, 0, 0, 0.1)',
 
-  /** 🌙 Dark mode (tuỳ chọn) */
-  darkBackground: '#1F2937',
-  darkCard: '#374151',
-  darkText: '#F3F4F6',
+  text: '#1E293B',
+  textSecondary: '#64748B',
+  placeholder: '#9CA3AF',
+
+  success: '#22C55E',
+  error: '#EF4444',
+  warning: '#FACC15',
+
+  white: '#FFFFFF',
+  shadow: '#000000',
+  gray: '#6B7280',
+  grayLight: '#E2E8F0',
+  grayDark: '#475569',
+
+  buttonStart: '#2563EB',
+  buttonEnd: '#3B82F6',
 };

@@ -1,4 +1,3 @@
-// src/utils/formatters.js
 
 export const formatDate = (date) => {
   if (!date) return 'Chưa có';
