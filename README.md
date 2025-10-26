@@ -63,28 +63,28 @@
 │   │   │   ├── PatientCheckinScreen.js
 │   │   │   ├── ReceptionHomeScreen.js
 │   │   │   └── HomeScreen.js
-│   │
+│
 │   ├── 📁 services
 │   │   └── userService.js
-│   │
+│
 │   ├── 📁 shared
 │   │   ├── colors.js
 │   │   └── theme.js
-│   │
+│
 │   ├── 📁 store
 │   │   └── useUserStore.js
-│   │
+│
 │   ├── 📁 styles
-│   │   ├── auth/
+│   │   ├── 📁 auth
 │   │   │   ├── loginStyles.js
 │   │   │   └── registerStyles.js
-│   │   ├── drawer/
+│   │   ├── 📁 drawer
 │   │   │   ├── patientDrawerStyles.js
 │   │   │   └── profileStyles.js
-│   │
+│
 │   ├── 📁 utils
 │   │   └── formatters.js
-│   │
+│
 │   └── index.js
 │
 ├── .gitignore
