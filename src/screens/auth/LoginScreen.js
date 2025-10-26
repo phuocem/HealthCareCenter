@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,7 +10,12 @@ import {
   Platform,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import Animated, { FadeInUp, FadeOut } from 'react-native-reanimated';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  Easing,
+} from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { signIn } from '../../controllers/authController';
@@ -21,6 +26,20 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const navigation = useNavigation();
+
+  // 🔹 Animation values
+  const opacity = useSharedValue(0);
+  const translateY = useSharedValue(30);
+
+  useEffect(() => {
+    opacity.value = withTiming(1, { duration: 600, easing: Easing.out(Easing.cubic) });
+    translateY.value = withTiming(0, { duration: 600, easing: Easing.out(Easing.cubic) });
+  }, []);
+
+  const fadeInUpStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ translateY: translateY.value }],
+  }));
 
   const handleLogin = async () => {
     try {
@@ -44,16 +63,14 @@ export default function LoginScreen() {
         colors={['#007AFF', '#00C6FF']}
         style={styles.gradientBackground}
       >
-        <Animated.View entering={FadeInUp.duration(600)} style={styles.formContainer}>
+        <Animated.View style={[styles.formContainer, fadeInUpStyle]}>
           {/* Logo and Title */}
-          <Animated.View entering={FadeInUp.delay(100).duration(600)}>
-            <Text style={styles.logo}>🩺</Text>
-            <Text style={styles.title}>Chào mừng trở lại!</Text>
-            <Text style={styles.subtitle}>Đăng nhập để tiếp tục</Text>
-          </Animated.View>
+          <Text style={styles.logo}>🩺</Text>
+          <Text style={styles.title}>Chào mừng trở lại!</Text>
+          <Text style={styles.subtitle}>Đăng nhập để tiếp tục</Text>
 
           {/* Email Input */}
-          <Animated.View entering={FadeInUp.delay(200).duration(600)} style={styles.inputContainer}>
+          <View style={styles.inputContainer}>
             <Ionicons name="mail-outline" size={20} color="#6B7280" style={styles.inputIcon} />
             <TextInput
               style={styles.input}
@@ -64,10 +81,10 @@ export default function LoginScreen() {
               onChangeText={setEmail}
               autoCapitalize="none"
             />
-          </Animated.View>
+          </View>
 
           {/* Password Input */}
-          <Animated.View entering={FadeInUp.delay(300).duration(600)} style={styles.inputContainer}>
+          <View style={styles.inputContainer}>
             <Ionicons name="lock-closed-outline" size={20} color="#6B7280" style={styles.inputIcon} />
             <TextInput
               style={styles.input}
@@ -87,39 +104,35 @@ export default function LoginScreen() {
                 color="#6B7280"
               />
             </TouchableOpacity>
-          </Animated.View>
+          </View>
 
           {/* Login Button */}
-          <Animated.View entering={FadeInUp.delay(400).duration(600)}>
-            <TouchableOpacity
-              style={[styles.button, loading && styles.buttonDisabled]}
-              onPress={handleLogin}
-              disabled={loading}
+          <TouchableOpacity
+            style={[styles.button, loading && styles.buttonDisabled]}
+            onPress={handleLogin}
+            disabled={loading}
+          >
+            <LinearGradient
+              colors={loading ? ['#6B7280', '#6B7280'] : ['#2563EB', '#3B82F6']}
+              style={styles.buttonGradient}
             >
-              <LinearGradient
-                colors={loading ? ['#6B7280', '#6B7280'] : ['#2563EB', '#3B82F6']}
-                style={styles.buttonGradient}
-              >
-                {loading ? (
-                  <Animated.View entering={FadeIn} exiting={FadeOut}>
-                    <Ionicons name="refresh" size={24} color="#fff" style={styles.loadingIcon} />
-                  </Animated.View>
-                ) : (
-                  <Text style={styles.buttonText}>Đăng nhập</Text>
-                )}
-              </LinearGradient>
-            </TouchableOpacity>
-          </Animated.View>
+              {loading ? (
+                <Ionicons name="refresh" size={24} color="#fff" style={styles.loadingIcon} />
+              ) : (
+                <Text style={styles.buttonText}>Đăng nhập</Text>
+              )}
+            </LinearGradient>
+          </TouchableOpacity>
 
           {/* Register Link */}
-          <Animated.View entering={FadeInUp.delay(500).duration(600)} style={styles.footer}>
+          <View style={styles.footer}>
             <TouchableOpacity onPress={() => navigation.navigate('Register')}>
               <Text style={styles.link}>
                 Chưa có tài khoản?{' '}
                 <Text style={styles.linkBold}>Đăng ký</Text>
               </Text>
             </TouchableOpacity>
-          </Animated.View>
+          </View>
         </Animated.View>
       </LinearGradient>
     </KeyboardAvoidingView>

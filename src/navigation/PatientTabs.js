@@ -1,19 +1,12 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { View, Text, TouchableOpacity, Image, useWindowDimensions, Platform } from 'react-native';
 import { createDrawerNavigator } from '@react-navigation/drawer';
-import { createStackNavigator } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
-import {
-  useWindowDimensions,
-  TouchableOpacity,
-  View,
-  Text,
-  Image,
-  StyleSheet,
-  Platform,
-} from 'react-native';
-import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
+import Animated, { FadeIn } from 'react-native-reanimated';
+import { supabase } from '../api/supabase';
+import { patientDrawerStyles as styles } from '../styles/patient/patientDrawerStyles';
 
 import HomeScreen from '../screens/patient/HomeScreen';
 import AppointmentScreen from '../screens/patient/AppointmentScreen';
@@ -21,11 +14,26 @@ import HistoryScreen from '../screens/patient/HistoryScreen';
 import ProfileScreen from '../screens/patient/ProfileScreen';
 
 const Drawer = createDrawerNavigator();
-const Stack = createStackNavigator();
 
 function CustomDrawerContent({ navigation }) {
+  const [profile, setProfile] = useState(null);
   const { width } = useWindowDimensions();
-  const drawerWidth = Math.min(width * 0.78, 340);
+  const drawerWidth = Math.min(width * 0.75, 320);
+
+   useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const userProfile = await getUserProfile(user.id);
+          setProfile(userProfile);
+        }
+      } catch (error) {
+        console.error('❌ Lỗi khi tải hồ sơ:', error);
+      }
+    };
+    fetchProfile();
+  }, []);
 
   const menuItems = [
     { name: 'Trang chủ', icon: 'home-outline', screen: 'HomeScreen' },
@@ -36,36 +44,39 @@ function CustomDrawerContent({ navigation }) {
 
   return (
     <LinearGradient
-      colors={['#007AFF', '#00C6FF']}
+      colors={['#007AFF', '#6BCBFF']}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={[styles.drawerContainer, { width: drawerWidth }]}
     >
-      <BlurView intensity={50} tint="light" style={styles.headerContainer}>
-        <Image
-          source={{ uri: 'https://i.pravatar.cc/150?img=68' }}
-          style={styles.avatar}
-        />
-        <Text style={styles.userName}>Nguyễn Văn A</Text>
-        <Text style={styles.userEmail}>patient@example.com</Text>
+      <BlurView intensity={70} tint="light" style={styles.headerContainer}>
+        <View style={styles.avatarWrapper}>
+          <LinearGradient colors={['#00C6FF', '#007AFF']} style={styles.avatarBorder}>
+            <Image source={{ uri: 'https://i.pravatar.cc/150?img=68' }} style={styles.avatar} />
+          </LinearGradient>
+        </View>
+        <Text style={styles.userName}>{profile ? profile.full_name : 'Đang tải...'}</Text>
+        <Text style={styles.userEmail}>{profile ? profile.email : ''}</Text>
       </BlurView>
 
       <View style={styles.menuContainer}>
         {menuItems.map((item, index) => (
-          <Animated.View
-            key={item.name}
-            entering={FadeIn.delay(120 * index).duration(400)}
-            exiting={FadeOut}
-          >
+          <Animated.View key={item.name} entering={FadeIn.delay(100 * index).duration(400)}>
             <TouchableOpacity
               onPress={() => navigation.navigate(item.screen)}
-              activeOpacity={0.7}
+              activeOpacity={0.85}
               style={styles.menuItem}
             >
               <View style={styles.iconWrapper}>
                 <Ionicons name={item.icon} size={24} color="#fff" />
               </View>
               <Text style={styles.menuText}>{item.name}</Text>
+              <Ionicons
+                name="chevron-forward-outline"
+                size={20}
+                color="#fff"
+                style={{ opacity: 0.7, marginLeft: 'auto' }}
+              />
             </TouchableOpacity>
           </Animated.View>
         ))}
@@ -73,164 +84,68 @@ function CustomDrawerContent({ navigation }) {
 
       <View style={styles.footer}>
         <TouchableOpacity
-          activeOpacity={0.8}
+          activeOpacity={0.9}
           style={styles.logoutButton}
-          onPress={() => console.log('Đăng xuất')}
+          onPress={async () => {
+            const { error } = await supabase.auth.signOut();
+            if (!error) {
+              navigation.reset({
+                index: 0,
+                routes: [{ name: 'Auth', state: { routes: [{ name: 'Login' }] } }],
+              });
+            }
+          }}
         >
-          <Ionicons name="log-out-outline" size={22} color="#fff" />
-          <Text style={styles.logoutText}>Đăng xuất</Text>
+          <LinearGradient
+            colors={['#FF6B6B', '#FF4757']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.logoutGradient}
+          >
+            <Ionicons name="log-out-outline" size={22} color="#fff" />
+            <Text style={styles.logoutText}>Đăng xuất</Text>
+          </LinearGradient>
         </TouchableOpacity>
+
         <Text style={styles.versionText}>Phiên bản 1.0.0</Text>
       </View>
     </LinearGradient>
   );
 }
 
-function DrawerContent() {
+export default function PatientDrawer() {
   const { width } = useWindowDimensions();
-  const drawerWidth = Math.min(width * 0.78, 340);
+  const drawerWidth = Math.min(width * 0.75, 320);
 
   return (
     <Drawer.Navigator
       drawerContent={(props) => <CustomDrawerContent {...props} />}
-      screenOptions={{
-        headerShown: false,
-        drawerType: 'front',
-        overlayColor: 'rgba(0,0,0,0.2)',
-        drawerStyle: {
-          width: drawerWidth,
-          backgroundColor: 'transparent',
-        },
-        sceneContainerStyle: {
-          backgroundColor: '#F9FAFB',
-          borderRadius: 24,
-          overflow: 'hidden',
-        },
-        swipeEdgeWidth: 70,
-      }}
-    >
-      <Drawer.Screen name="HomeScreen" component={HomeScreen} />
-      <Drawer.Screen name="AppointmentScreen" component={AppointmentScreen} />
-      <Drawer.Screen name="HistoryScreen" component={HistoryScreen} />
-      <Drawer.Screen name="ProfileScreen" component={ProfileScreen} />
-    </Drawer.Navigator>
-  );
-}
-
-export default function PatientDrawer() {
-  return (
-    <Stack.Navigator
       screenOptions={({ navigation }) => ({
         headerStyle: {
           backgroundColor: '#007AFF',
-          elevation: 0,
-          shadowOpacity: 0,
+          height: Platform.OS === 'ios' ? 100 : 80,
         },
         headerTintColor: '#fff',
         headerTitleAlign: 'center',
-        headerTitleStyle: {
-          fontWeight: '700',
-          fontSize: 20,
+        headerTitleStyle: { fontWeight: '700', fontSize: 20 },
+        drawerType: 'front',
+        overlayColor: 'transparent',
+        drawerStyle: {
+          width: drawerWidth,
+          backgroundColor: 'transparent',
+          marginTop: Platform.OS === 'ios' ? 100 : 80,
         },
         headerLeft: () => (
-          <TouchableOpacity
-            style={{ marginLeft: 16 }}
-            onPress={() => navigation.openDrawer()}
-          >
+          <TouchableOpacity style={{ marginLeft: 16 }} onPress={() => navigation.openDrawer()}>
             <Ionicons name="menu-outline" size={28} color="#fff" />
           </TouchableOpacity>
         ),
       })}
     >
-      <Stack.Screen
-        name="MainDrawer"
-        component={DrawerContent}
-        options={{
-          title: 'Ứng dụng Bệnh nhân',
-        }}
-      />
-    </Stack.Navigator>
+      <Drawer.Screen name="HomeScreen" component={HomeScreen} options={{ title: 'Trang chủ' }} />
+      <Drawer.Screen name="AppointmentScreen" component={AppointmentScreen} options={{ title: 'Lịch khám' }} />
+      <Drawer.Screen name="HistoryScreen" component={HistoryScreen} options={{ title: 'Lịch sử khám' }} />
+      <Drawer.Screen name="ProfileScreen" component={ProfileScreen} options={{ title: 'Hồ sơ cá nhân' }} />
+    </Drawer.Navigator>
   );
 }
-
-const styles = StyleSheet.create({
-  drawerContainer: {
-    flex: 1,
-    paddingTop: Platform.OS === 'ios' ? 60 : 50,
-    borderTopRightRadius: 32,
-    borderBottomRightRadius: 32,
-    overflow: 'hidden',
-  },
-  headerContainer: {
-    alignItems: 'center',
-    paddingVertical: 24,
-    marginHorizontal: 16,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-  },
-  avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 50,
-    borderWidth: 2.5,
-    borderColor: '#fff',
-    marginBottom: 12,
-  },
-  userName: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  userEmail: {
-    color: '#E6F0FF',
-    fontSize: 14,
-    opacity: 0.9,
-  },
-  menuContainer: {
-    flex: 1,
-    marginTop: 20,
-    paddingHorizontal: 12,
-  },
-  menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    borderRadius: 16,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    marginBottom: 8,
-  },
-  iconWrapper: {
-    width: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  menuText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '500',
-    marginLeft: 8,
-  },
-  footer: {
-    padding: 16,
-    borderTopWidth: 0.3,
-    borderTopColor: 'rgba(255,255,255,0.3)',
-  },
-  logoutButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 8,
-  },
-  logoutText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  versionText: {
-    color: '#E6F0FF',
-    fontSize: 13,
-    opacity: 0.8,
-    textAlign: 'center',
-  },
-});

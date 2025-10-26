@@ -1,5 +1,5 @@
+// src/navigation/AppNavigator.js
 import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import AuthNavigator from './AuthNavigator';
 import RoleRedirect from '../screens/auth/RoleRedirect';
@@ -13,16 +13,14 @@ const Stack = createStackNavigator();
 
 export default function AppNavigator() {
   return (
-    <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="Auth" component={AuthNavigator} />
-        <Stack.Screen name="RoleRedirect" component={RoleRedirect} />
-        <Stack.Screen name="AdminTabs" component={AdminTabs} />
-        <Stack.Screen name="DoctorTabs" component={DoctorTabs} />
-        <Stack.Screen name="PatientTabs" component={PatientTabs} />
-        <Stack.Screen name="ReceptionTabs" component={ReceptionTabs} />
-        <Stack.Screen name="AccountantTabs" component={AccountantTabs} />
-      </Stack.Navigator>
-    </NavigationContainer>
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="Auth" component={AuthNavigator} />
+      <Stack.Screen name="RoleRedirect" component={RoleRedirect} />
+      <Stack.Screen name="AdminTabs" component={AdminTabs} />
+      <Stack.Screen name="DoctorTabs" component={DoctorTabs} />
+      <Stack.Screen name="PatientTabs" component={PatientTabs} />
+      <Stack.Screen name="ReceptionTabs" component={ReceptionTabs} />
+      <Stack.Screen name="AccountantTabs" component={AccountantTabs} />
+    </Stack.Navigator>
   );
 }
