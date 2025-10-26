@@ -1,26 +1,21 @@
-// src/controllers/userController.js
-import * as userService from '../services/userService';
+import { fetchAuthUser, fetchUserProfile } from '../services/userService';
 
-/** 🔹 Lấy thông tin hồ sơ người dùng (controller) */
+/** 🔹 Controller: kết hợp Auth + Profile */
 export const getUserProfile = async (userId) => {
   try {
-    const profile = await userService.fetchUserProfile(userId);
-    if (!profile) throw new Error(`Không tìm thấy hồ sơ cho ID: ${userId}`);
-
-    const user = await userService.fetchAuthUser();
-    if (user?.id !== userId)
-      throw new Error('User ID không khớp với user đang đăng nhập');
+    const authUser = await fetchAuthUser(); // ✅ Lấy email
+    const profile = await fetchUserProfile(userId); // ✅ Lấy info DB
 
     return {
-      id: profile.id,
-      name: profile.full_name || 'Người dùng mới',
-      email: user.email,
-      gender: profile.gender || 'Không xác định',
-      date_of_birth: profile.date_of_birth || null,
-      role: profile.roles?.name || 'patient',
+      id: profile?.id,
+      name: profile?.full_name || 'Người dùng mới',
+      email: authUser?.email || '',
+      gender: profile?.gender || 'unknown',
+      date_of_birth: profile?.date_of_birth || null,
+      role: profile?.roles?.name || 'patient',
     };
-  } catch (error) {
-    console.error('❌ Lỗi khi lấy hồ sơ người dùng:', error.message);
-    throw error;
+  } catch (err) {
+    console.error('❌ getUserProfile error:', err);
+    throw err;
   }
 };

@@ -1,3 +1,4 @@
+// src/screens/ProfileScreen.jsx
 import React, { useEffect, useState } from 'react';
 import { View, Text, ActivityIndicator, TouchableOpacity, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -5,8 +6,8 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { useNavigation } from '@react-navigation/native';
 
-import { supabase } from '../../api/supabase';
 import { getUserProfile } from '../../controllers/userController';
+import { supabase } from '../../api/supabase';
 import { formatDate, formatGender, formatRole } from '../../utils/formatters';
 import { profileStyles as styles } from '../../styles/patient/profileStyles';
 
@@ -18,12 +19,16 @@ export default function ProfileScreen() {
   const fetchProfile = async () => {
     try {
       setLoading(true);
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      if (authError) throw new Error(`Lỗi xác thực: ${authError.message}`);
-      if (!user) throw new Error('Không tìm thấy người dùng hiện tại');
 
-      const userProfile = await getUserProfile(user.id);
-      setProfile(userProfile);
+      // 🔹 Lấy user hiện tại từ Supabase Auth
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError) throw new Error(authError.message);
+      if (!user) throw new Error('Không tìm thấy người dùng.');
+
+      // 🔹 Gọi controller
+      const profileData = await getUserProfile(user.id);
+      setProfile(profileData);
+
     } catch (error) {
       console.error('❌ Lỗi khi tải hồ sơ người dùng:', error);
       Alert.alert('Lỗi', error.message || 'Không thể tải hồ sơ. Vui lòng thử lại.', [

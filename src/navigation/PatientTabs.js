@@ -1,3 +1,4 @@
+// src/navigation/PatientDrawer.js
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, Image, useWindowDimensions, Platform } from 'react-native';
 import { createDrawerNavigator } from '@react-navigation/drawer';
@@ -7,6 +8,7 @@ import { BlurView } from 'expo-blur';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { supabase } from '../api/supabase';
 import { patientDrawerStyles as styles } from '../styles/patient/patientDrawerStyles';
+import { getUserProfile } from '../controllers/userController'; // ✅ import đúng
 
 import HomeScreen from '../screens/patient/HomeScreen';
 import AppointmentScreen from '../screens/patient/AppointmentScreen';
@@ -20,18 +22,26 @@ function CustomDrawerContent({ navigation }) {
   const { width } = useWindowDimensions();
   const drawerWidth = Math.min(width * 0.75, 320);
 
-   useEffect(() => {
+  useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          const userProfile = await getUserProfile(user.id);
-          setProfile(userProfile);
-        }
+        console.log('🧩 DEBUG: Bắt đầu fetch hồ sơ...');
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+        if (userError) throw userError;
+        if (!user) throw new Error('Không có người dùng đang đăng nhập');
+
+        console.log('🧩 DEBUG: user.id =', user.id);
+
+        const userProfile = await getUserProfile(user.id);
+        console.log('🧩 DEBUG: Hồ sơ tải về =', userProfile);
+
+        setProfile(userProfile);
       } catch (error) {
         console.error('❌ Lỗi khi tải hồ sơ:', error);
       }
     };
+
     fetchProfile();
   }, []);
 
@@ -55,7 +65,9 @@ function CustomDrawerContent({ navigation }) {
             <Image source={{ uri: 'https://i.pravatar.cc/150?img=68' }} style={styles.avatar} />
           </LinearGradient>
         </View>
-        <Text style={styles.userName}>{profile ? profile.full_name : 'Đang tải...'}</Text>
+
+        {/* ✅ Dùng đúng field name từ getUserProfile */}
+        <Text style={styles.userName}>{profile ? profile.name : 'Đang tải...'}</Text>
         <Text style={styles.userEmail}>{profile ? profile.email : ''}</Text>
       </BlurView>
 
@@ -79,6 +91,7 @@ function CustomDrawerContent({ navigation }) {
               />
             </TouchableOpacity>
           </Animated.View>
+          
         ))}
       </View>
 

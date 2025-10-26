@@ -1,7 +1,13 @@
-// src/services/userService.js
 import { supabase } from '../api/supabase';
 
-/** 🔹 Lấy profile người dùng */
+/** 🔹 Lấy thông tin xác thực từ Supabase Auth */
+export const fetchAuthUser = async () => {
+  const { data, error } = await supabase.auth.getUser();
+  if (error) throw error;
+  return data.user;
+};
+
+/** 🔹 Lấy hồ sơ người dùng từ bảng user_profiles */
 export const fetchUserProfile = async (userId) => {
   const { data, error } = await supabase
     .from('user_profiles')
@@ -11,11 +17,4 @@ export const fetchUserProfile = async (userId) => {
 
   if (error) throw error;
   return data;
-};
-
-/** 🔹 Lấy thông tin xác thực (auth) */
-export const fetchAuthUser = async () => {
-  const { data, error } = await supabase.auth.getUser();
-  if (error) throw error;
-  return data.user;
 };
