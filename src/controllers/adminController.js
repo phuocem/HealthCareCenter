@@ -1,9 +1,10 @@
-import { createUserWithRoleService } from '../services/adminService';
+import { createDoctorWithRoleService } from '../services/adminService';
 import { Alert } from 'react-native';
 
-export const createUserWithRole = async (email, password, fullName, departmentId = null) => {
+export const createDoctorWithRole = async (email, password, fullName, departmentId = null) => {
   try {
-    const result = await createUserWithRoleService(email, password, fullName, departmentId);
+    const role = 2; // role bác sĩ
+    const result = await createDoctorWithRoleService(email, password, fullName, departmentId, role);
     Alert.alert('✅ Thành công', result.message);
     return result;
   } catch (error) {

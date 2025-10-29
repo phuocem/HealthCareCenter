@@ -10,8 +10,6 @@ export const signIn = async (email, password) => {
 };
 
 export const signUp = async (email, password, fullName, phone, dateOfBirth, gender) => {
-  console.log('signUp called with:', { email, password, fullName, phone, dateOfBirth, gender });
-
   const normalizedGender =
     gender?.toLowerCase().includes('nam')
       ? 'male'
@@ -20,26 +18,14 @@ export const signUp = async (email, password, fullName, phone, dateOfBirth, gend
       : 'other';
 
   let formattedDate = null;
-  if (dateOfBirth) {
-    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-    if (dateRegex.test(dateOfBirth)) {
-      formattedDate = dateOfBirth;
-    } else {
-      console.warn('Ngày sinh không hợp lệ:', dateOfBirth);
-    }
-  }
+  const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+  if (dateRegex.test(dateOfBirth)) formattedDate = dateOfBirth;
 
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      emailRedirectTo: null,
-      data: {
-        full_name: fullName || '',
-        phone: phone || '',
-        date_of_birth: formattedDate || null,
-        gender: normalizedGender || 'other',
-      },
+      data: { full_name: fullName, phone, date_of_birth: formattedDate, gender: normalizedGender },
     },
   });
 
@@ -47,21 +33,24 @@ export const signUp = async (email, password, fullName, phone, dateOfBirth, gend
   const user = data.user;
 
   if (user) {
-    const { error: profileError } = await supabase
-      .from('user_profiles')
-      .upsert(
-        { id: user.id, full_name: fullName, date_of_birth: formattedDate, phone, gender: normalizedGender },
-        { onConflict: 'id' }
-      );
+    const { error: profileError } = await supabase.from('user_profiles').upsert(
+      {
+        id: user.id,
+        full_name: fullName,
+        date_of_birth: formattedDate,
+        phone,
+        gender: normalizedGender,
+        role_id: 3, // 🟢 người dùng mặc định là role 3
+      },
+      { onConflict: 'id' }
+    );
 
-    if (profileError) {
-      console.error('Lỗi khi chèn vào user_profiles:', profileError);
-      throw profileError;
-    }
+    if (profileError) throw profileError;
   }
 
   return user;
 };
+
 
 export const getUserProfile = async (userId) => {
   const { data, error } = await supabase

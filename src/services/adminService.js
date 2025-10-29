@@ -1,8 +1,6 @@
 import { supabase } from '../api/supabase';
 
-/** 🧩 Tạo tài khoản người dùng mặc định vai trò bác sĩ (role_id = 2) */
-export const createUserWithRoleService = async (email, password, fullName, departmentId = null) => {
-  // 1️⃣ Tạo tài khoản Auth
+export const createDoctorWithRoleService = async (email, password, fullName, departmentId = null, role = 2) => {
   const { data: authData, error: authError } = await supabase.auth.admin.createUser({
     email,
     password,
@@ -18,7 +16,6 @@ export const createUserWithRoleService = async (email, password, fullName, depar
 
   const userId = authData.user.id;
 
-  // 2️⃣ Kiểm tra user_profiles đã tồn tại chưa
   const { data: existingProfile } = await supabase
     .from('user_profiles')
     .select('id')
@@ -28,11 +25,10 @@ export const createUserWithRoleService = async (email, password, fullName, depar
   if (!existingProfile) {
     const { error: profileError } = await supabase
       .from('user_profiles')
-      .insert([{ id: userId, full_name: fullName, role_id: 2, department_id: departmentId }]);
+  .insert([{ id: userId, full_name: fullName, role_id: role, email }]);
     if (profileError) throw new Error(profileError.message);
   }
 
-  // 3️⃣ Nếu là bác sĩ → thêm vào doctors nếu chưa có
   const { data: existingDoctor } = await supabase
     .from('doctors')
     .select('id')
@@ -46,5 +42,18 @@ export const createUserWithRoleService = async (email, password, fullName, depar
     if (doctorError) throw new Error(doctorError.message);
   }
 
-  return { success: true, message: `✅ Đã tạo tài khoản bác sĩ cho ${fullName}` };
+  return { success: true, message: `✅ Đã tạo tài khoản bác sĩ cho ${fullName}`, userId };
+};
+export const getAllDoctorsService = async () => {
+  const { data, error } = await supabase
+    .from('doctors')
+    .select(`
+      id,
+      department_id,
+      user_profiles (full_name, role_id)
+    `);
+
+  if (error) throw new Error(error.message);
+
+  return data;
 };

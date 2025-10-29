@@ -1,11 +1,38 @@
 import { supabase } from '../api/supabase';
 
-export async function fetchDoctors() {
-  const { data, error } = await supabase
-    .from('doctors')
-    .select('id, name, specialization')
-    .order('id', { ascending: true });
+// 🔹 Lấy danh sách bác sĩ
+export async function getDoctors() {
+ const { data, error } = await supabase
+  .from('user_profiles')
+  .select('*, roles(name)')
+  .eq('role_id', 2); // nếu role_id = 2 là bác sĩ
 
-  if (error) throw new Error(error.message);
-  return data || [];
+
+  if (error) throw error;
+  return data;
+}
+
+// 🔹 Tạo bác sĩ mới
+export async function createDoctor(doctorData) {
+  const { data, error } = await supabase.from('user_profiles').insert([doctorData]);
+  if (error) throw error;
+  return data;
+}
+
+// 🔹 Cập nhật thông tin bác sĩ
+export async function updateDoctor(id, updates) {
+  const { data, error } = await supabase
+    .from('user_profiles')
+    .update(updates)
+    .eq('id', id);
+
+  if (error) throw error;
+  return data;
+}
+
+// 🔹 Xóa bác sĩ
+export async function deleteDoctor(id) {
+  const { error } = await supabase.from('user_profiles').delete().eq('id', id);
+  if (error) throw error;
+  return true;
 }

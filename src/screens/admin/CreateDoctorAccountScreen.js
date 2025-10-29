@@ -3,8 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView 
 import { Picker } from '@react-native-picker/picker';
 import { Colors } from '../../shared/colors';
 import { supabase } from '../../api/supabase';
-import { createUserWithRole } from '../../controllers/adminController';
-
+import { createDoctorWithRole } from '../../controllers/adminController';
 export default function CreateDoctorAccountScreen() {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -31,44 +30,32 @@ export default function CreateDoctorAccountScreen() {
   }, []);
 
   const handleCreateDoctor = async () => {
-    if (!fullName || !email || !password || !departmentId) {
-      Alert.alert('Thiếu thông tin', 'Vui lòng nhập đầy đủ thông tin bắt buộc.');
-      return;
-    }
+  if (!fullName || !email || !password || !departmentId) {
+    Alert.alert('Thiếu thông tin', 'Vui lòng nhập đầy đủ thông tin bắt buộc.');
+    return;
+  }
 
-    try {
-      // 🧠 Gọi controller tạo tài khoản (tự thêm vào user_profiles & doctors)
-      await createUserWithRole(email, password, fullName, 'doctor', departmentId);
+  try {
+    const result = await createDoctorWithRole(email, password, fullName, departmentId);
 
-      // ✅ Cập nhật thêm thông tin chi tiết bác sĩ (update thay vì insert)
-      const { error: updateError } = await supabase
-        .from('doctors')
-        .update({
-          specialization,
-          experience_years: parseInt(experienceYears) || 0,
-          room_number: roomNumber,
-          max_patients_per_slot: parseInt(maxPatients),
-          bio,
-        })
-        .eq('department_id', departmentId)
-        .eq('id', (await supabase.auth.getUser()).data.user.id);
+    await supabase
+      .from('doctors')
+      .update({
+        specialization,
+        experience_years: parseInt(experienceYears) || 0,
+        room_number: roomNumber,
+        max_patients_per_slot: parseInt(maxPatients),
+        bio,
+      })
+      .eq('id', result.userId);
 
-      if (updateError) throw updateError;
+    Alert.alert('✅ Thành công', `Đã tạo tài khoản bác sĩ ${fullName}`);
+    // reset form ...
+  } catch (error) {
+    Alert.alert('Lỗi', error.message);
+  }
+};
 
-      Alert.alert('✅ Thành công', `Đã tạo tài khoản bác sĩ ${fullName}`);
-      setFullName('');
-      setEmail('');
-      setPassword('');
-      setSpecialization('');
-      setExperienceYears('');
-      setRoomNumber('');
-      setMaxPatients('5');
-      setBio('');
-      setDepartmentId('');
-    } catch (error) {
-      Alert.alert('Lỗi', error.message);
-    }
-  };
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 50 }}>

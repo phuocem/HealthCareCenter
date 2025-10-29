@@ -31,48 +31,34 @@ export default function AdminDrawer() {
           width: 250,
         },
         drawerIcon: ({ color, size }) => {
-          let iconName;
-
-          switch (route.name) {
-            case 'Trang chủ':
-              iconName = 'home-outline';
-              break;
-            case 'Bác sĩ':
-              iconName = 'medkit-outline';
-              break;
-            case 'Bệnh nhân':
-              iconName = 'heart-outline';
-              break;
-            case 'Người dùng':
-              iconName = 'people-outline';
-              break;
-            case 'Quản trị':
-              iconName = 'settings-outline';
-              break;
-            case 'Tạo tài khoản':
-              iconName = 'person-add-outline';
-              break;
-            case 'Tạo nhân viên':
-              iconName = 'briefcase-outline';
-              break;
-            case 'Báo cáo':
-              iconName = 'bar-chart-outline';
-              break;
-            default:
-              iconName = 'ellipse-outline';
-          }
-
-          return <Ionicons name={iconName} size={size} color={color} />;
+          const icons = {
+            'Trang chủ': 'home-outline',
+            'Bác sĩ': 'medkit-outline',
+            'Bệnh nhân': 'heart-outline',
+            'Người dùng': 'people-outline',
+            'Quản trị': 'settings-outline',
+            'Tạo tài khoản': 'person-add-outline',
+            'Tạo bác sĩ': 'briefcase-outline',
+            'Báo cáo': 'bar-chart-outline',
+          };
+          return <Ionicons name={icons[route.name] || 'ellipse-outline'} size={size} color={color} />;
         },
       })}
     >
+      {/* Màn hình chính */}
       <Drawer.Screen name="Trang chủ" component={AdminHomeScreen} />
+
+      {/* Quản lý */}
       <Drawer.Screen name="Bác sĩ" component={ManageDoctorsScreen} />
       <Drawer.Screen name="Bệnh nhân" component={ManagePatientsScreen} />
       <Drawer.Screen name="Người dùng" component={ManageUsersScreen} />
       <Drawer.Screen name="Quản trị" component={AdminDashboard} />
+
+      {/* Tạo tài khoản */}
       <Drawer.Screen name="Tạo tài khoản" component={CreateUserScreen} />
-      <Drawer.Screen name="Tạo nhân viên" component={CreateDoctorAccountScreen} />
+      <Drawer.Screen name="Tạo bác sĩ" component={CreateDoctorAccountScreen} />
+
+      {/* Báo cáo */}
       <Drawer.Screen name="Báo cáo" component={ReportsScreen} />
     </Drawer.Navigator>
   );
