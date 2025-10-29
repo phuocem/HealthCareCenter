@@ -29,7 +29,6 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const navigation = useNavigation();
 
-  // 🔹 Animation setup
   const opacity = useSharedValue(0);
   const translateY = useSharedValue(30);
 
@@ -43,7 +42,6 @@ export default function LoginScreen() {
     transform: [{ translateY: translateY.value }],
   }));
 
-  // 🔹 Xử lý đăng nhập
   const handleLogin = async () => {
     try {
       setLoading(true);
@@ -67,12 +65,10 @@ export default function LoginScreen() {
         style={styles.gradientBackground}
       >
         <Animated.View style={[styles.formContainer, fadeInUpStyle]}>
-          {/* 🔹 Logo và tiêu đề */}
           <Text style={styles.logo}>🩺</Text>
           <Text style={styles.title}>Chào mừng trở lại!</Text>
           <Text style={styles.subtitle}>Đăng nhập để tiếp tục</Text>
 
-          {/* 🔹 Email Input */}
           <View style={styles.inputContainer}>
             <Ionicons name="mail-outline" size={20} color={Colors.textSecondary} style={styles.inputIcon} />
             <TextInput
@@ -86,7 +82,6 @@ export default function LoginScreen() {
             />
           </View>
 
-          {/* 🔹 Password Input */}
           <View style={styles.inputContainer}>
             <Ionicons name="lock-closed-outline" size={20} color={Colors.textSecondary} style={styles.inputIcon} />
             <TextInput
@@ -109,7 +104,6 @@ export default function LoginScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* 🔹 Nút đăng nhập */}
           <TouchableOpacity
             style={[styles.button, loading && styles.buttonDisabled]}
             onPress={handleLogin}
@@ -125,7 +119,6 @@ export default function LoginScreen() {
             </LinearGradient>
           </TouchableOpacity>
 
-          {/* 🔹 Đăng ký */}
           <View style={styles.footer}>
             <TouchableOpacity onPress={() => navigation.navigate('Register')}>
               <Text style={styles.link}>

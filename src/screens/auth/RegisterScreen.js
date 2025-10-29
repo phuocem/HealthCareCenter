@@ -83,7 +83,6 @@ const InputField = ({
   );
 };
 
-// Loading Overlay component
 const LoadingOverlay = () => (
   <Animated.View entering={FadeInUp.duration(300)} style={styles.loadingOverlay}>
     <ActivityIndicator size="large" color="#00C6FF" />

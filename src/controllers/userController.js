@@ -1,10 +1,9 @@
 import { fetchAuthUser, fetchUserProfile } from '../services/userService';
 
-/** 🔹 Controller: kết hợp Auth + Profile */
 export const getUserProfile = async (userId) => {
   try {
-    const authUser = await fetchAuthUser(); // ✅ Lấy email
-    const profile = await fetchUserProfile(userId); // ✅ Lấy info DB
+    const authUser = await fetchAuthUser();
+    const profile = await fetchUserProfile(userId);
 
     return {
       id: profile?.id,
@@ -15,7 +14,7 @@ export const getUserProfile = async (userId) => {
       role: profile?.roles?.name || 'patient',
     };
   } catch (err) {
-    console.error('❌ getUserProfile error:', err);
+    console.error('getUserProfile error:', err);
     throw err;
   }
 };

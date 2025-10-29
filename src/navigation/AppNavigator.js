@@ -21,6 +21,7 @@ export default function AppNavigator() {
       <Stack.Screen name="PatientTabs" component={PatientTabs} />
       <Stack.Screen name="ReceptionTabs" component={ReceptionTabs} />
       <Stack.Screen name="AccountantTabs" component={AccountantTabs} />
+      
     </Stack.Navigator>
   );
 }
