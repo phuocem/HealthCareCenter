@@ -9,7 +9,8 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 import { supabase } from '../api/supabase';
 import { patientDrawerStyles as styles } from '../styles/patient/patientDrawerStyles';
 import { getUserProfile } from '../controllers/userController'; // ✅ import đúng
-
+import SearchDoctorScreen from '../screens/patient/SearchDoctorScreen';
+import BookingScreen from '../screens/patient/BookingScreen';
 import HomeScreen from '../screens/patient/HomeScreen';
 import AppointmentScreen from '../screens/patient/AppointmentScreen';
 import HistoryScreen from '../screens/patient/HistoryScreen';
@@ -50,6 +51,8 @@ function CustomDrawerContent({ navigation }) {
     { name: 'Lịch khám', icon: 'calendar-outline', screen: 'AppointmentScreen' },
     { name: 'Lịch sử khám', icon: 'time-outline', screen: 'HistoryScreen' },
     { name: 'Hồ sơ cá nhân', icon: 'person-outline', screen: 'ProfileScreen' },
+    { name: 'Tìm bác sĩ', icon: 'search-outline', screen: 'SearchDoctorScreen' },
+
   ];
 
   return (
@@ -159,6 +162,9 @@ export default function PatientDrawer() {
       <Drawer.Screen name="AppointmentScreen" component={AppointmentScreen} options={{ title: 'Lịch khám' }} />
       <Drawer.Screen name="HistoryScreen" component={HistoryScreen} options={{ title: 'Lịch sử khám' }} />
       <Drawer.Screen name="ProfileScreen" component={ProfileScreen} options={{ title: 'Hồ sơ cá nhân' }} />
+      <Drawer.Screen name="SearchDoctorScreen" component={SearchDoctorScreen} options={{ title: 'Tìm bác sĩ' }} />
+<Drawer.Screen name="BookingScreen" component={BookingScreen} options={{ title: 'Đặt lịch' }} />
+
     </Drawer.Navigator>
   );
 }

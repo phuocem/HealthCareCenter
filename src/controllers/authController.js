@@ -40,7 +40,7 @@ export const signUp = async (email, password, fullName, phone, dateOfBirth, gend
         date_of_birth: formattedDate,
         phone,
         gender: normalizedGender,
-        role_id: 3, // 🟢 người dùng mặc định là role 3
+        role_id: 3, 
       },
       { onConflict: 'id' }
     );

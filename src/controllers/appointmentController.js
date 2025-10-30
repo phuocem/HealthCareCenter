@@ -1,35 +1,21 @@
-import { supabase } from '../api/supabase';
+// appointmentController.js
+import { getAppointmentsByDoctorService, updateAppointmentStatusService } from '../services/appointmentService';
 
-export async function fetchAppointments() {
-  const { data, error } = await supabase
-    .from('appointments')
-    .select(`
-      id,
-      status,
-      symptoms,
-      created_at,
-      doctor:doctors (
-        name,
-        specialization
-      ),
-      slot:appointment_slots (
-        work_date,
-        start_time,
-        end_time
-      )
-    `)
-    .order('created_at', { ascending: false });
+export const getAppointmentsByDoctorController = async (doctorId) => {
+  try {
+    const data = await getAppointmentsByDoctorService(doctorId);
+    return data;
+  } catch (error) {
+    console.error('Lỗi lấy lịch hẹn:', error.message);
+    throw error;
+  }
+};
 
-  if (error) throw new Error(error.message);
-  return data || [];
-}
-
-export async function cancelAppointment(id) {
-  const { error } = await supabase
-    .from('appointments')
-    .update({ status: 'cancelled' })
-    .eq('id', id);
-
-  if (error) throw new Error(error.message);
-  return true;
-}
+export const updateAppointmentStatusController = async (id, status) => {
+  try {
+    return await updateAppointmentStatusService(id, status);
+  } catch (error) {
+    console.error('Lỗi cập nhật trạng thái:', error.message);
+    throw error;
+  }
+};
