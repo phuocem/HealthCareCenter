@@ -1,10 +1,4 @@
-// src/services/searchDoctorService.js
 import { supabase } from '../../api/supabase';
-
-/**
- * 🔍 Tìm kiếm bác sĩ theo tên
- * Join bảng doctors với user_profiles để lấy tên đầy đủ
- */
 export const searchDoctorsService = async (keyword) => {
   const { data, error } = await supabase
     .from('doctors')
