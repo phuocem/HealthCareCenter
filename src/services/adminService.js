@@ -9,7 +9,7 @@ export const createDoctorWithRoleService = async (email, password, fullName, dep
 
   if (authError) {
     if (authError.message.includes('already registered')) {
-      return { success: false, message: `⚠️ Email ${email} đã tồn tại` };
+      return { success: false, message: `Email ${email} đã tồn tại` };
     }
     throw new Error(authError.message);
   }
@@ -25,7 +25,7 @@ export const createDoctorWithRoleService = async (email, password, fullName, dep
   if (!existingProfile) {
     const { error: profileError } = await supabase
       .from('user_profiles')
-  .insert([{ id: userId, full_name: fullName, role_id: role, email }]);
+      .insert([{ id: userId, full_name: fullName, role_id: role, email }]);
     if (profileError) throw new Error(profileError.message);
   }
 
@@ -42,8 +42,9 @@ export const createDoctorWithRoleService = async (email, password, fullName, dep
     if (doctorError) throw new Error(doctorError.message);
   }
 
-  return { success: true, message: `✅ Đã tạo tài khoản bác sĩ cho ${fullName}`, userId };
+  return { success: true, message: `Đã tạo tài khoản bác sĩ cho ${fullName}`, userId };
 };
+
 export const getAllDoctorsService = async () => {
   const { data, error } = await supabase
     .from('doctors')
@@ -54,6 +55,5 @@ export const getAllDoctorsService = async () => {
     `);
 
   if (error) throw new Error(error.message);
-
   return data;
 };

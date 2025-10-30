@@ -14,7 +14,6 @@ export default function CreateStaffAccountScreen() {
       return;
     }
 
-    // 🧩 Giả lập lưu tài khoản
     Alert.alert('Thành công', `Đã tạo tài khoản cho ${role}: ${fullName}`);
     setFullName('');
     setEmail('');

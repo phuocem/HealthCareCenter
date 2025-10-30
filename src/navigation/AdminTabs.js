@@ -3,7 +3,6 @@ import { createDrawerNavigator } from '@react-navigation/drawer';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../shared/colors';
 
-// 📁 Import các màn hình
 import AdminHomeScreen from '../screens/admin/AdminHomeScreen';
 import ManageDoctorsScreen from '../screens/admin/ManageDoctorsScreen';
 import ManageUsersScreen from '../screens/admin/ManageUsersScreen';
@@ -16,7 +15,7 @@ import CreateDoctorAccountScreen from '../screens/admin/CreateDoctorAccountScree
 
 const Drawer = createDrawerNavigator();
 
-export default function AdminDrawer() {
+export default function AdminTabs() {
   return (
     <Drawer.Navigator
       initialRouteName="Trang chủ"
@@ -45,20 +44,13 @@ export default function AdminDrawer() {
         },
       })}
     >
-      {/* Màn hình chính */}
       <Drawer.Screen name="Trang chủ" component={AdminHomeScreen} />
-
-      {/* Quản lý */}
       <Drawer.Screen name="Bác sĩ" component={ManageDoctorsScreen} />
       <Drawer.Screen name="Bệnh nhân" component={ManagePatientsScreen} />
       <Drawer.Screen name="Người dùng" component={ManageUsersScreen} />
       <Drawer.Screen name="Quản trị" component={AdminDashboard} />
-
-      {/* Tạo tài khoản */}
       <Drawer.Screen name="Tạo tài khoản" component={CreateUserScreen} />
       <Drawer.Screen name="Tạo bác sĩ" component={CreateDoctorAccountScreen} />
-
-      {/* Báo cáo */}
       <Drawer.Screen name="Báo cáo" component={ReportsScreen} />
     </Drawer.Navigator>
   );
