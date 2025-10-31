@@ -8,7 +8,7 @@ import { BlurView } from 'expo-blur';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { supabase } from '../api/supabase';
 import { patientDrawerStyles as styles } from '../styles/patient/patientDrawerStyles';
-import { getUserProfile } from '../controllers/userController'; // ✅ import đúng
+import { getUserProfile } from '../controllers/patient/userController'; // ✅ import đúng
 import SearchDoctorScreen from '../screens/patient/SearchDoctorScreen';
 import BookingScreen from '../screens/patient/BookingScreen';
 import HomeScreen from '../screens/patient/HomeScreen';

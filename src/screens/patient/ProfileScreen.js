@@ -12,7 +12,7 @@ import Animated, { FadeInUp } from 'react-native-reanimated';
 import { useNavigation } from '@react-navigation/native';
 
 import { supabase } from '../../api/supabase';
-import { getUserProfile } from '../../controllers/userController';
+import { getUserProfile } from '../../controllers/patient/userController';
 import { formatDate, formatGender, formatRole } from '../../utils/formatters';
 import { profileStyles as styles } from '../../styles/patient/profileStyles';
 import { Colors } from '../../shared/colors';

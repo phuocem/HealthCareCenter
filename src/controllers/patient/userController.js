@@ -1,4 +1,4 @@
-import { fetchAuthUser, fetchUserProfile } from '../services/userService';
+import { fetchAuthUser, fetchUserProfile } from '../../services/patient/userService';
 
 export const getUserProfile = async (userId) => {
   try {

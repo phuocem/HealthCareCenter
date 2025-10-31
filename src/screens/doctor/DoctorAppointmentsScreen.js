@@ -8,7 +8,7 @@ import {
   Alert,
 } from 'react-native';
 import { styles } from '../../styles/doctor/DoctorAppointmentsStyles';
-import { DoctorAppointmentController } from '../../controllers/doctor_appointment_controller';
+import { DoctorAppointmentController } from '../../controllers/doctor/doctor_appointment_controller';
 
 export default function DoctorAppointmentsScreen() {
   const [appointments, setAppointments] = useState([]);

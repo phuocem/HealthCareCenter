@@ -10,7 +10,7 @@ import {
   Image,
 } from 'react-native';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
-import { getAllDoctorsService, deleteDoctorService } from '../../services/doctorService';
+import { getAllDoctorsService, deleteDoctorService } from '../../services/doctor/doctorService';
 import { styles } from '../../styles/admin/ManageDoctorsStyles';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 

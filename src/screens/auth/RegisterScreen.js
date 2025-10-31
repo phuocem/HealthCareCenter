@@ -16,7 +16,7 @@ import Animated, { FadeInUp, withSpring, useAnimatedStyle, useSharedValue } from
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
-import { signUp } from '../../controllers/authController';
+import { signUp } from '../../controllers/auth/authController';
 import { registerStyles as styles } from '../../styles/auth/registerStyles';
 
 // Reusable InputField component with animation
