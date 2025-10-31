@@ -13,7 +13,7 @@ import {
   Platform,
 } from 'react-native';
 import { supabase } from '../../api/supabase';
-import { createDoctorWithRoleService } from '../../services/doctor/doctorService'; // ĐÃ SỬA
+import { createDoctorWithRoleService } from '../../services/doctor/doctorService';
 import { styles } from '../../styles/admin/CreateDoctorAccountStyles';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
@@ -35,10 +35,9 @@ export default function CreateDoctorAccountScreen() {
   const [filteredDepts, setFilteredDepts] = useState([]);
   const [scheduleModalVisible, setScheduleModalVisible] = useState(false);
 
-  // Lịch làm việc
-  const [selectedDays, setSelectedDays] = useState([]);
-  const [startTime, setStartTime] = useState('');
-  const [endTime, setEndTime] = useState('');
+  // LỊCH LÀM VIỆC: MỖI NGÀY CÓ GIỜ RIÊNG
+  const [schedules, setSchedules] = useState({}); 
+  // { "Thứ 2": { start: "08:00", end: "12:00" } }
 
   const weekDays = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ nhật'];
   const navigation = useNavigation();
@@ -87,23 +86,51 @@ export default function CreateDoctorAccountScreen() {
     return dep ? dep.name : 'Chọn khoa';
   };
 
-  const toggleDay = (day) => {
-    setSelectedDays((prev) =>
-      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
-    );
-  };
-
-  // Format giờ
-  const formatTimeInput = (text) => {
-    const cleaned = text.replace(/[^0-9]/g, '');
+  // FORMAT GIỜ – AN TOÀN VỚI UNDEFINED
+  const formatTimeInput = (text = '') => {
+    const cleaned = String(text || '').replace(/[^0-9]/g, '');
     if (cleaned.length === 0) return '';
     if (cleaned.length <= 2) return cleaned;
     return `${cleaned.slice(0, 2)}:${cleaned.slice(2, 4)}`.slice(0, 5);
   };
 
+  // CHỌN/BỎ CHỌN NGÀY – ĐẢM BẢO CÓ start/end
+  const toggleDay = (day) => {
+    setSchedules((prev) => {
+      const newS = { ...prev };
+      if (newS[day]) {
+        delete newS[day];
+      } else {
+        newS[day] = { start: '08:00', end: '17:00' }; // MẶC ĐỊNH
+      }
+      return newS;
+    });
+  };
+
+  // CẬP NHẬT GIỜ – BẢO VỆ prev[day]
+  const updateTime = (day, field, value) => {
+    const formatted = formatTimeInput(value);
+    setSchedules((prev) => {
+      const current = prev[day] || { start: '', end: '' }; // BẢO VỆ
+      return {
+        ...prev,
+        [day]: { ...current, [field]: formatted },
+      };
+    });
+  };
+
+  // HIỂN THỊ LỊCH
+  const getScheduleText = () => {
+    const entries = Object.entries(schedules);
+    if (entries.length === 0) return 'Chọn lịch làm việc';
+    return entries
+      .map(([day, { start, end }]) => `${day}: ${start || '--:--'}-${end || '--:--'}`)
+      .join(' | ');
+  };
+
   // TẠO BÁC SĨ
   const handleCreateDoctor = async () => {
-    // Validate
+    // Validate cơ bản
     if (!fullName.trim() || !email.trim() || !password || !departmentId) {
       Alert.alert('Thiếu thông tin', 'Vui lòng nhập đầy đủ các trường bắt buộc.');
       return;
@@ -116,26 +143,52 @@ export default function CreateDoctorAccountScreen() {
       Alert.alert('Mật khẩu yếu', 'Mật khẩu phải có ít nhất 6 ký tự.');
       return;
     }
-    if (selectedDays.length === 0 || !startTime || !endTime) {
-      Alert.alert('Thiếu lịch', 'Vui lòng chọn ngày và giờ làm việc.');
+    if (Object.keys(schedules).length === 0) {
+      Alert.alert('Thiếu lịch', 'Vui lòng chọn ít nhất 1 ngày làm việc.');
       return;
     }
-    if (!isValidTime(startTime) || !isValidTime(endTime)) {
-      Alert.alert('Giờ sai', 'Vui lòng nhập giờ theo định dạng HH:MM');
-      return;
+
+    // KIỂM TRA GIỜ – AN TOÀN 100%
+    for (const [day, timeObj] of Object.entries(schedules)) {
+      const start = timeObj?.start || '';
+      const end = timeObj?.end || '';
+
+      if (!start || !end) {
+        Alert.alert('Thiếu giờ', `Vui lòng nhập đầy đủ giờ cho ${day}`);
+        return;
+      }
+
+      if (!isValidTime(start) || !isValidTime(end)) {
+        Alert.alert('Sai định dạng', `${day}: Dùng HH:MM (ví dụ: 08:00)`);
+        return;
+      }
+
+      // BÂY GIỜ MỚI DÁM split()
+      const [sh, sm] = start.split(':').map(Number);
+      const [eh, em] = end.split(':').map(Number);
+
+      if (sh * 60 + sm >= eh * 60 + em) {
+        Alert.alert('Lỗi giờ', `${day}: Giờ kết thúc phải sau giờ bắt đầu`);
+        return;
+      }
     }
 
     setLoading(true);
     try {
-      // GỌI SERVICE ĐÃ SỬA: TỰ ĐỘNG LƯU LỊCH MẪU + SINH SLOT
+      // Chuẩn bị danh sách lịch
+      const scheduleList = Object.entries(schedules).map(([day, { start, end }]) => ({
+        day_of_week: day,
+        start_time: start,
+        end_time: end,
+      }));
+
+      // GỌI SERVICE
       const result = await createDoctorWithRoleService(
         email,
         password,
         fullName,
         departmentId,
-        selectedDays,
-        startTime,
-        endTime
+        scheduleList
       );
 
       if (!result.success) {
@@ -143,7 +196,7 @@ export default function CreateDoctorAccountScreen() {
         return;
       }
 
-      // CẬP NHẬT THÔNG TIN BÁC SĨ (nếu cần)
+      // Cập nhật thông tin bổ sung
       await supabase
         .from('doctors')
         .update({
@@ -328,10 +381,8 @@ export default function CreateDoctorAccountScreen() {
             onPress={() => setScheduleModalVisible(true)}
           >
             <Icon name="calendar-outline" size={20} color="#007AFF" style={styles.inputIcon} />
-            <Text style={styles.dropdownText}>
-              {selectedDays.length > 0
-                ? `${selectedDays.join(', ')} (${startTime || '--:--'} - ${endTime || '--:--'})`
-                : 'Chọn ngày và giờ làm việc'}
+            <Text style={styles.dropdownText} numberOfLines={2}>
+              {getScheduleText()}
             </Text>
             <Icon name="chevron-down" size={20} color="#007AFF" />
           </TouchableOpacity>
@@ -354,7 +405,7 @@ export default function CreateDoctorAccountScreen() {
         </TouchableOpacity>
       </ScrollView>
 
-      {/* Modal Khoa */}
+      {/* === MODAL KHOA === */}
       <Modal visible={deptModalVisible} animationType="slide" transparent>
         <TouchableWithoutFeedback onPress={() => setDeptModalVisible(false)}>
           <View style={styles.modalOverlay} />
@@ -390,7 +441,7 @@ export default function CreateDoctorAccountScreen() {
         </View>
       </Modal>
 
-      {/* Modal Lịch */}
+      {/* === MODAL LỊCH – ĐÃ SỬA LỖI === */}
       <Modal visible={scheduleModalVisible} animationType="slide" transparent>
         <TouchableWithoutFeedback onPress={() => setScheduleModalVisible(false)}>
           <View style={styles.modalOverlay} />
@@ -403,72 +454,72 @@ export default function CreateDoctorAccountScreen() {
             </TouchableOpacity>
           </View>
 
-          <Text style={styles.sectionTitle}>Chọn ngày</Text>
-          <View style={styles.daysContainer}>
+          <ScrollView style={{ maxHeight: 500 }}>
             {weekDays.map((day) => (
-              <TouchableOpacity
-                key={day}
-                style={[
-                  styles.dayChip,
-                  selectedDays.includes(day) && styles.dayChipSelected,
-                ].filter(Boolean)}
-                onPress={() => toggleDay(day)}
-              >
-                <Text
-                  style={[
-                    styles.dayChipText,
-                    selectedDays.includes(day) && styles.dayChipTextSelected,
-                  ].filter(Boolean)}
-                >
-                  {day}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+              <View key={day} style={{ marginVertical: 12, paddingHorizontal: 16 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+                  {/* NÚT CHỌN NGÀY */}
+                  <TouchableOpacity
+                    onPress={() => toggleDay(day)}
+                    style={[
+                      styles.dayChip,
+                      schedules[day] && styles.dayChipSelected,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.dayChipText,
+                        schedules[day] && styles.dayChipTextSelected,
+                      ].filter(Boolean)}
+                    >
+                      {day}
+                    </Text>
+                  </TouchableOpacity>
 
-          <Text style={styles.sectionTitle}>Giờ làm việc</Text>
-          <View style={styles.timeRow}>
-            <View style={styles.timeInputWrapper}>
-              <Icon name="time-outline" size={18} color="#666" />
-              <TextInput
-                placeholder="08:00"
-                value={startTime}
-                onChangeText={(text) => setStartTime(formatTimeInput(text))}
-                style={styles.timeInput}
-                maxLength={5}
-              />
-            </View>
-            <Text style={styles.timeSeparator}>→</Text>
-            <View style={styles.timeInputWrapper}>
-              <Icon name="time-outline" size={18} color="#666" />
-              <TextInput
-                placeholder="17:00"
-                value={endTime}
-                onChangeText={(text) => setEndTime(formatTimeInput(text))}
-                style={styles.timeInput}
-                maxLength={5}
-              />
-            </View>
-          </View>
+                  {/* GIỜ – CHỈ HIỆN KHI ĐÃ CHỌN */}
+                  {schedules[day] && (
+                    <>
+                      <View style={styles.timeInputWrapper}>
+                        <TextInput
+                          placeholder="08:00"
+                          value={schedules[day].start}
+                          onChangeText={(t) => updateTime(day, 'start', t)}
+                          style={styles.timeInput}
+                          maxLength={5}
+                          keyboardType="numeric"
+                        />
+                      </View>
+                      <Text style={{ fontSize: 16, color: '#333' }}>→</Text>
+                      <View style={styles.timeInputWrapper}>
+                        <TextInput
+                          placeholder="17:00"
+                          value={schedules[day].end}
+                          onChangeText={(t) => updateTime(day, 'end', t)}
+                          style={styles.timeInput}
+                          maxLength={5}
+                          keyboardType="numeric"
+                        />
+                      </View>
+                    </>
+                  )}
+                </View>
+              </View>
+            ))}
+          </ScrollView>
 
           <TouchableOpacity
             style={[
               styles.primaryButton,
-              (!startTime || !endTime || selectedDays.length === 0 || !isValidTime(startTime) || !isValidTime(endTime))
-                ? styles.buttonDisabled
-                : null,
+              Object.keys(schedules).length === 0 && styles.buttonDisabled,
             ]}
             onPress={() => {
-              if (selectedDays.length === 0 || !startTime || !endTime) {
-                Alert.alert('Thiếu', 'Chọn ngày và giờ đầy đủ.');
-                return;
-              }
-              if (!isValidTime(startTime) || !isValidTime(endTime)) {
-                Alert.alert('Sai giờ', 'Dùng định dạng HH:MM');
+              if (Object.keys(schedules).length === 0) {
+                Alert.alert('Thiếu', 'Chọn ít nhất 1 ngày làm việc.');
                 return;
               }
               setScheduleModalVisible(false);
             }}
+            disabled={Object.keys(schedules).length === 0}
           >
             <Text style={styles.primaryButtonText}>Xác nhận</Text>
           </TouchableOpacity>

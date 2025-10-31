@@ -66,10 +66,8 @@ export const createDoctorWithRoleService = async (
   email,
   password,
   fullName,
-  departmentId = null,
-  selectedDays = [],
-  startTime,
-  endTime,
+  departmentId,
+  scheduleList = [], // ← [{ day_of_week, start_time, end_time }]
   role = 2
 ) => {
   // 1. Tạo tài khoản Auth
@@ -117,14 +115,14 @@ export const createDoctorWithRoleService = async (
   }
 
   // 4. LƯU LỊCH MẪU (template)
-  if (selectedDays.length > 0 && startTime && endTime) {
-    const templateData = selectedDays.map((day) => ({
+ if (scheduleList.length > 0) {
+    const templateData = scheduleList.map(s => ({
       doctor_id: userId,
       is_template: true,
-      day_of_week: day,
-      start_time: startTime,
-      end_time: endTime,
-      max_patients: 30, // tổng ca ngày
+      day_of_week: s.day_of_week,
+      start_time: s.start_time,
+      end_time: s.end_time,
+      max_patients: 30,
     }));
 
     const { error: tempErr } = await supabase
@@ -132,8 +130,8 @@ export const createDoctorWithRoleService = async (
       .insert(templateData);
     if (tempErr) throw tempErr;
 
-    // 5. TỰ ĐỘNG SINH SLOT CHO 7 NGÀY TỚI
-    await generateSlotsForNext7Days(userId, selectedDays, startTime, endTime);
+    // TỰ ĐỘNG SINH SLOT CHO 7 NGÀY TỚI
+    await generateSlotsForNext7Days(userId, scheduleList);
   }
 
   return { success: true, message: `Đã tạo bác sĩ ${fullName}`, userId };
