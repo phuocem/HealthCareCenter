@@ -18,7 +18,7 @@ import Animated, {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 
-import { signIn } from '../../controllers/authController';
+import { signIn } from '../../controllers/auth/authController';
 import { loginStyles as styles } from '../../styles/auth/loginStyles';
 import { Colors } from '../../shared/colors';
 

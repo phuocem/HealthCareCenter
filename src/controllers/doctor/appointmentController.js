@@ -1,5 +1,5 @@
 // appointmentController.js
-import { getAppointmentsByDoctorService, updateAppointmentStatusService } from '../services/appointmentService';
+import { getAppointmentsByDoctorService, updateAppointmentStatusService } from '../services/doctor/doctor_appointment_service.';
 
 export const getAppointmentsByDoctorController = async (doctorId) => {
   try {

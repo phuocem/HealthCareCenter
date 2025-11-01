@@ -1,4 +1,4 @@
-import { DoctorAppointmentService } from '../services/doctor_appointment_service.';
+import { DoctorAppointmentService } from '../../services/doctor/doctor_appointment_service';
 
 export const DoctorAppointmentController = {
   async loadAppointments(setDoctorId, setAppointments, setLoading, showError) {

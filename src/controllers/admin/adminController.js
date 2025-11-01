@@ -1,5 +1,5 @@
 // src/controllers/doctorController.js
-import { createDoctorWithRoleService, getAllDoctorsService } from '../services/doctorService';
+import { createDoctorWithRoleService, getAllDoctorsService } from '../../services/doctor/doctorService';
 import { Alert } from 'react-native';
 
 export const createDoctorWithRole = async (email, password, fullName, departmentId = null) => {
