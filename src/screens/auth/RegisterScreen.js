@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import {
   View,
@@ -10,6 +11,7 @@ import {
   Vibration,
   Dimensions,
   ActivityIndicator,
+  ScrollView,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Animated, { FadeInUp, withSpring, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
@@ -19,7 +21,6 @@ import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { signUp } from '../../controllers/auth/authController';
 import { registerStyles as styles } from '../../styles/auth/registerStyles';
 
-// Reusable InputField component with animation
 const InputField = ({
   icon,
   placeholder,
@@ -50,11 +51,18 @@ const InputField = ({
   return (
     <Animated.View
       entering={FadeInUp.delay(index * 100).duration(400).springify()}
-      style={[styles.inputContainer, animatedStyle, error && styles.inputError]}
+      style={[
+        styles.inputContainer,
+        animatedStyle,
+        { backgroundColor: '#f7fafc', borderRadius: 10, borderWidth: 1.5, borderColor: error ? '#F87171' : '#E5E7EB', minHeight: 48, },
+        error && styles.inputError,
+      ]}
     >
-      <MaterialCommunityIcons name={icon} size={22} color="#6B7280" style={styles.icon} />
+      {icon && (
+        <MaterialCommunityIcons name={icon} size={22} color="#6B7280" style={styles.icon} />
+      )}
       <TextInput
-        style={[styles.input, error && { color: '#F87171' }]}
+        style={[styles.input, { color: '#111827', fontSize: 15 }, error && { color: '#F87171' }]}
         placeholder={placeholder}
         placeholderTextColor="#9CA3AF"
         value={value}
@@ -69,15 +77,11 @@ const InputField = ({
       {rightIcon && (
         <TouchableOpacity
           onPress={onRightPress}
+          style={{ marginRight: 8 }}
           accessibilityLabel={rightIcon === 'eye-outline' ? 'Show password' : 'Hide password'}
         >
           <MaterialCommunityIcons name={rightIcon} size={22} color="#6B7280" />
         </TouchableOpacity>
-      )}
-      {error && (
-        <Animated.Text entering={FadeInUp.duration(200)} style={styles.errorText}>
-          {error}
-        </Animated.Text>
       )}
     </Animated.View>
   );
@@ -215,123 +219,192 @@ export default function RegisterScreen() {
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       >
-        <View style={styles.centeredContainer}>
-          <Animated.View entering={FadeInUp.duration(600).springify()} style={styles.formContainer}>
-            <View style={styles.logoContainer}>
-              <MaterialCommunityIcons name="account-plus" size={70} color="#2563EB" />
-              <Text style={styles.title}>Create Account</Text>
-              <Text style={styles.subtitle}>Join us and start your journey today</Text>
-            </View>
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.centeredContainer}>
+            <Animated.View entering={FadeInUp.duration(600).springify()} style={[styles.formContainer, styles.formCard, styles.shadow]}>
+              <View style={styles.logoContainer}>
+                <MaterialCommunityIcons name="account-plus" size={70} color="#2563EB" />
+                <Text style={styles.title}>Create Account</Text>
+                <Text style={styles.subtitle}>Join us and start your journey today</Text>
+              </View>
 
-            <InputField
-              icon="account-outline"
-              placeholder="Full Name"
-              value={form.full_name}
-              onChange={(v) => handleChange('full_name', v)}
-              autoCapitalize="words"
-              error={errors.full_name}
-              index={0}
-            />
-            <InputField
-              icon="email-outline"
-              placeholder="Email"
-              value={form.email}
-              onChange={(v) => handleChange('email', v)}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              error={errors.email}
-              index={1}
-            />
-            <InputField
-              icon="lock-outline"
-              placeholder="Password"
-              value={form.password}
-              onChange={(v) => handleChange('password', v)}
-              secureTextEntry={!showPassword}
-              rightIcon={showPassword ? 'eye-outline' : 'eye-off-outline'}
-              onRightPress={() => setShowPassword(!showPassword)}
-              error={errors.password}
-              index={2}
-            />
-            <InputField
-              icon="phone-outline"
-              placeholder="Phone Number"
-              value={form.phone}
-              onChange={(v) => handleChange('phone', v)}
-              keyboardType="phone-pad"
-              error={errors.phone}
-              index={3}
-            />
-            <InputField
-              icon="account-circle-outline"
-              placeholder="Gender (Male/Female)"
-              value={form.gender}
-              onChange={(v) => handleChange('gender', v)}
-              error={errors.gender}
-              index={4}
-            />
+              {/* Full Name */}
+              <View style={styles.inputWrapper}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+                  <Text style={styles.inputLabel}>Full Name</Text>
+                  {errors.full_name ? (
+                    <Text style={[styles.errorText, { marginLeft: 'auto' }]}>{errors.full_name}</Text>
+                  ) : null}
+                </View>
+                <InputField
+                  icon="account-outline"
+                  placeholder="Enter your full name"
+                  value={form.full_name}
+                  onChange={(v) => handleChange('full_name', v)}
+                  autoCapitalize="words"
+                  error={errors.full_name}
+                  index={0}
+                />
+              </View>
 
-            <Animated.View
-              entering={FadeInUp.delay(500).duration(400).springify()}
-              style={[styles.inputContainer, errors.dateOfBirth && styles.inputError]}
-            >
-              <MaterialCommunityIcons name="calendar-outline" size={22} color="#6B7280" style={styles.icon} />
-              <TouchableOpacity style={{ flex: 1 }} onPress={showDatePicker} accessibilityLabel="Select date of birth">
-                <Text style={[styles.input, { color: form.dateOfBirth ? '#111827' : '#9CA3AF' }]}>
-                  {form.dateOfBirth
-                    ? `${form.dateOfBirth.getDate().toString().padStart(2, '0')}/${(form.dateOfBirth.getMonth() + 1)
-                        .toString()
-                        .padStart(2, '0')}/${form.dateOfBirth.getFullYear()}`
-                    : 'Select Date of Birth'}
-                </Text>
-              </TouchableOpacity>
-              {errors.dateOfBirth && (
-                <Animated.Text entering={FadeInUp.duration(200)} style={styles.errorText}>
-                  {errors.dateOfBirth}
-                </Animated.Text>
-              )}
-            </Animated.View>
+              {/* Email */}
+              <View style={styles.inputWrapper}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+                  <Text style={styles.inputLabel}>Email</Text>
+                  {errors.email ? (
+                    <Text style={[styles.errorText, { marginLeft: 'auto' }]}>{errors.email}</Text>
+                  ) : null}
+                </View>
+                <InputField
+                  icon="email-outline"
+                  placeholder="Enter your email"
+                  value={form.email}
+                  onChange={(v) => handleChange('email', v)}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  error={errors.email}
+                  index={1}
+                />
+              </View>
 
-            <DateTimePickerModal
-              isVisible={isDatePickerVisible}
-              mode="date"
-              onConfirm={handleConfirm}
-              onCancel={hideDatePicker}
-              maximumDate={new Date()}
-              date={form.dateOfBirth || new Date()}
-              display={Platform.OS === 'ios' ? 'inline' : 'default'}
-              accentColor="#2563EB"
-              textColor="#111827"
-            />
+              {/* Password */}
+              <View style={styles.inputWrapper}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+                  <Text style={styles.inputLabel}>Password</Text>
+                  {errors.password ? (
+                    <Text style={[styles.errorText, { marginLeft: 'auto' }]}>{errors.password}</Text>
+                  ) : null}
+                </View>
+                <InputField
+                  icon="lock-outline"
+                  placeholder="Enter your password"
+                  value={form.password}
+                  onChange={(v) => handleChange('password', v)}
+                  secureTextEntry={!showPassword}
+                  rightIcon={showPassword ? 'eye-outline' : 'eye-off-outline'}
+                  onRightPress={() => setShowPassword(!showPassword)}
+                  error={errors.password}
+                  index={2}
+                />
+              </View>
 
-            <Animated.View entering={FadeInUp.delay(600).duration(400)} style={buttonAnimatedStyle}>
-              <TouchableOpacity
-                style={[styles.button, loading && styles.buttonDisabled]}
-                onPress={handleRegister}
-                disabled={loading}
-                accessibilityLabel="Register account"
-                activeOpacity={0.8}
-              >
-                <LinearGradient
-                  colors={loading ? ['#9CA3AF', '#9CA3AF'] : ['#2563EB', '#60A5FA']}
-                  style={styles.buttonGradient}
+              {/* Phone Number */}
+              <View style={styles.inputWrapper}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+                  <Text style={styles.inputLabel}>Phone Number</Text>
+                  {errors.phone ? (
+                    <Text style={[styles.errorText, { marginLeft: 'auto' }]}>{errors.phone}</Text>
+                  ) : null}
+                </View>
+                <InputField
+                  icon="phone-outline"
+                  placeholder="Enter your phone number"
+                  value={form.phone}
+                  onChange={(v) => handleChange('phone', v)}
+                  keyboardType="phone-pad"
+                  error={errors.phone}
+                  index={3}
+                />
+              </View>
+
+              {/* Gender */}
+              <View style={styles.inputWrapper}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+                  <Text style={styles.inputLabel}>Gender</Text>
+                  {errors.gender ? (
+                    <Text style={[styles.errorText, { marginLeft: 'auto' }]}>{errors.gender}</Text>
+                  ) : null}
+                </View>
+                <InputField
+                  icon="account-circle-outline"
+                  placeholder="Male or Female"
+                  value={form.gender}
+                  onChange={(v) => handleChange('gender', v)}
+                  error={errors.gender}
+                  index={4}
+                />
+              </View>
+
+              {/* Date of Birth */}
+              <View style={styles.inputWrapper}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+                  <Text style={styles.inputLabel}>Date of Birth</Text>
+                  {errors.dateOfBirth ? (
+                    <Text style={[styles.errorText, { marginLeft: 'auto' }]}>{errors.dateOfBirth}</Text>
+                  ) : null}
+                </View>
+                <Animated.View
+                  entering={FadeInUp.delay(500).duration(400).springify()}
+                  style={[
+                    styles.inputContainer,
+                    { backgroundColor: '#f7fafc', borderRadius: 10, borderWidth: 1.5, borderColor: errors.dateOfBirth ? '#F87171' : '#E5E7EB', minHeight: 48, },
+                    errors.dateOfBirth && styles.inputError,
+                  ]}
                 >
-                  <Text style={styles.buttonText}>{loading ? 'Processing...' : 'Register'}</Text>
-                </LinearGradient>
-              </TouchableOpacity>
-            </Animated.View>
+                  <MaterialCommunityIcons name="calendar-outline" size={22} color="#6B7280" style={styles.icon} />
+                  <TouchableOpacity style={{ flex: 1, justifyContent: 'center', height: 44 }} onPress={showDatePicker} accessibilityLabel="Select date of birth">
+                    <Text style={[styles.input, { color: form.dateOfBirth ? '#111827' : '#9CA3AF', fontSize: 15 }]}>
+                      {form.dateOfBirth
+                        ? `${form.dateOfBirth.getDate().toString().padStart(2, '0')}/${(form.dateOfBirth.getMonth() + 1)
+                            .toString()
+                            .padStart(2, '0')}/${form.dateOfBirth.getFullYear()}`
+                        : 'Select Date of Birth'}
+                    </Text>
+                  </TouchableOpacity>
+                </Animated.View>
+              </View>
 
-            <Animated.View entering={FadeInUp.delay(700).duration(400)} style={styles.footer}>
-              <TouchableOpacity onPress={() => navigation.navigate('Login')} accessibilityLabel="Go to login">
-                <Text style={styles.link}>
-                  Already have an account? <Text style={styles.linkBold}>Log In</Text>
-                </Text>
-              </TouchableOpacity>
-            </Animated.View>
+              {/* DateTimePicker */}
+              <DateTimePickerModal
+                isVisible={isDatePickerVisible}
+                mode="date"
+                onConfirm={handleConfirm}
+                onCancel={hideDatePicker}
+                maximumDate={new Date()}
+                date={form.dateOfBirth || new Date()}
+                display={Platform.OS === 'ios' ? 'inline' : 'default'}
+                accentColor="#2563EB"
+                textColor="#111827"
+              />
 
-            {loading && <LoadingOverlay />}
-          </Animated.View>
-        </View>
+              {/* Register button */}
+              <Animated.View entering={FadeInUp.delay(600).duration(400)} style={[buttonAnimatedStyle, { marginTop: 6 }]}>
+                <TouchableOpacity
+                  style={[
+                    styles.button,
+                    { borderRadius: 12, shadowColor: '#60A5FA', shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.22, shadowRadius: 12, elevation: 3 },
+                    loading && styles.buttonDisabled,
+                  ]}
+                  onPress={handleRegister}
+                  disabled={loading}
+                  accessibilityLabel="Register account"
+                  activeOpacity={0.8}
+                >
+                  <LinearGradient
+                    colors={loading ? ['#9CA3AF', '#9CA3AF'] : ['#2563EB', '#60A5FA']}
+                    style={[styles.buttonGradient, { borderRadius: 12 }]}
+                  >
+                    <Text style={styles.buttonText}>{loading ? 'Processing...' : 'Register'}</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              </Animated.View>
+
+              {/* Login Link */}
+              <Animated.View entering={FadeInUp.delay(700).duration(400)} style={styles.footer}>
+                <TouchableOpacity onPress={() => navigation.navigate('Login')} accessibilityLabel="Go to login">
+                  <Text style={styles.link}>
+                    Already have an account? <Text style={styles.linkBold}>Log In</Text>
+                  </Text>
+                </TouchableOpacity>
+              </Animated.View>
+
+              {loading && <LoadingOverlay />}
+            </Animated.View>
+          </View>
+        </ScrollView>
       </LinearGradient>
     </KeyboardAvoidingView>
   );
