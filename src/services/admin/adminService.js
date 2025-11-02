@@ -1,4 +1,4 @@
-import { supabase } from '../api/supabase';
+import { supabase } from '../../api/supabase';
 
 export const createDoctorWithRoleService = async (email, password, fullName, departmentId = null, role = 2) => {
   const { data: authData, error: authError } = await supabase.auth.admin.createUser({

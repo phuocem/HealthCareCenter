@@ -4,7 +4,7 @@ import AuthNavigator from './AuthNavigator';
 import RoleRedirect from '../screens/auth/RoleRedirect';
 import AdminTabs from './AdminTabs';
 import DoctorTabs from './DoctorTabs';
-import PatientTabs from './PatientTabs';
+import PatientStack from './PatientStack';
 import ReceptionTabs from './ReceptionTabs';
 import AccountantTabs from './AccountantTabs';
 
@@ -17,7 +17,7 @@ export default function RootNavigator() {
       <Stack.Screen name="RoleRedirect" component={RoleRedirect} />
       <Stack.Screen name="AdminTabs" component={AdminTabs} />
       <Stack.Screen name="DoctorTabs" component={DoctorTabs} />
-      <Stack.Screen name="PatientTabs" component={PatientTabs} />
+      <Stack.Screen name="PatientStack" component={PatientStack} />
       <Stack.Screen name="ReceptionTabs" component={ReceptionTabs} />
       <Stack.Screen name="AccountantTabs" component={AccountantTabs} />
     </Stack.Navigator>

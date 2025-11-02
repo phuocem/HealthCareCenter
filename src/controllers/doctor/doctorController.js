@@ -1,4 +1,4 @@
-import { supabase } from '../api/supabase';
+import { supabase } from '../../api/supabase';
 
 // Lấy danh sách bác sĩ
 export async function getDoctors() {

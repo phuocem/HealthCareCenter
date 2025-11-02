@@ -1,0 +1,33 @@
+import React from 'react';
+import { createStackNavigator } from '@react-navigation/stack';
+import HomeScreen from '../screens/patient/HomeScreen';
+import BookingScreen from '../screens/patient/BookingScreen';
+import BookingOptionsScreen from '../screens/patient/BookingOptionsScreen';
+import BookByDoctor from '../screens/patient/Book_appointment/BookByDoctor';
+import BookByDate from '../screens/patient/Book_appointment/BookByDate';
+import SearchDoctorScreen from '../screens/patient/SearchDoctorScreen';
+import AppointmentScreen from '../screens/patient/AppointmentScreen';
+import HistoryScreen from '../screens/patient/HistoryScreen';
+import ProfileScreen from '../screens/patient/ProfileScreen';
+
+const Stack = createStackNavigator();
+
+export default function PatientStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="HomeScreen" component={HomeScreen} />
+      <Stack.Screen name="BookingScreen" component={BookingScreen} />
+      <Stack.Screen
+        name="BookingOptionsScreen"
+        component={BookingOptionsScreen}
+        options={{ headerShown: true, title: 'Đặt Khám' }}
+      />
+      <Stack.Screen name="BookByDoctor" component={BookByDoctor} />
+      <Stack.Screen name="BookByDate" component={BookByDate} />
+      <Stack.Screen name="SearchDoctorScreen" component={SearchDoctorScreen} />
+      <Stack.Screen name="AppointmentScreen" component={AppointmentScreen} />
+      <Stack.Screen name="HistoryScreen" component={HistoryScreen} />
+      <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
+    </Stack.Navigator>
+  );
+}

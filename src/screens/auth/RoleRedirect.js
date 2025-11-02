@@ -35,7 +35,7 @@ export default function RoleRedirect() {
           navigation.replace('DoctorTabs');
           break;
         case 'patient':
-          navigation.replace('PatientTabs');
+          navigation.replace('PatientStack', { screen: 'HomeScreen' });
           break;
         case 'receptionist':
           navigation.replace('ReceptionTabs');
@@ -44,7 +44,8 @@ export default function RoleRedirect() {
           navigation.replace('AccountantTabs');
           break;
         default:
-          navigation.replace('PatientTabs');
+          // ĐÃ SỬA: dùng PatientStack + HomeScreen
+          navigation.replace('PatientStack', { screen: 'HomeScreen' });
           break;
       }
     };
