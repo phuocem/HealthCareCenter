@@ -1,4 +1,3 @@
-// src/screens/patient/HistoryScreen.js
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -17,8 +16,6 @@ import { supabase } from '../../api/supabase';
 import QRCode from 'react-native-qrcode-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInUp, ZoomIn, FadeInDown } from 'react-native-reanimated';
-
-// === MÀU CHỦ ĐẠO TỪ HomeScreen ===
 const Colors = {
   primary: '#1D4ED8',
   secondary: '#38BDF8',
@@ -31,7 +28,6 @@ const Colors = {
   shadow: '#000',
   bg: '#F8FAFC',
 };
-
 export default function HistoryScreen() {
   const navigation = useNavigation();
   const [appointments, setAppointments] = useState([]);
@@ -68,7 +64,6 @@ export default function HistoryScreen() {
         `)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
-
       if (error) throw error;
       setAppointments(data || []);
     } catch (err) {
@@ -79,7 +74,6 @@ export default function HistoryScreen() {
       setRefreshing(false);
     }
   };
-
   useEffect(() => { fetchAppointments(); }, []);
 
   const onRefresh = () => { setRefreshing(true); fetchAppointments(); };
@@ -115,7 +109,6 @@ export default function HistoryScreen() {
       ]
     );
   };
-
   const renderAppointment = ({ item, index }) => {
     const slot = item.appointment_slots;
     const doctor = slot.doctors;
@@ -127,18 +120,14 @@ export default function HistoryScreen() {
       day: '2-digit',
       month: '2-digit',
     });
-
     const isCancelled = item.status === 'cancelled';
     const isPast = new Date(item.appointment_date) < new Date();
-
     const statusConfig = {
       confirmed: { colors: [Colors.primary, Colors.secondary], text: 'Đã xác nhận', icon: 'checkmark-circle' },
       cancelled: { colors: ['#EF4444', '#F87171'], text: 'Đã hủy', icon: 'close-circle' },
       past: { colors: ['#6B7280', '#9CA3AF'], text: 'Đã khám', icon: 'checkmark-done' },
     };
-
     const config = statusConfig[item.status === 'confirmed' ? 'confirmed' : item.status === 'cancelled' ? 'cancelled' : 'past'];
-
     return (
       <Animated.View entering={FadeInUp.delay(index * 60).duration(400)} style={styles.cardWrapper}>
         <TouchableOpacity activeOpacity={0.92} disabled={isCancelled}>
@@ -149,7 +138,6 @@ export default function HistoryScreen() {
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
             >
-              {/* HEADER */}
               <View style={styles.headerRow}>
                 <View style={styles.doctorInfo}>
                   <Text style={styles.doctorName}>{doctor.name}</Text>
@@ -165,7 +153,6 @@ export default function HistoryScreen() {
                   <Text style={styles.statusText}>{config.text}</Text>
                 </LinearGradient>
               </View>
-
               {/* THÔNG TIN NGÀY GIỜ */}
               <View style={styles.infoRow}>
                 <View style={styles.infoItem}>
@@ -183,8 +170,6 @@ export default function HistoryScreen() {
                   </View>
                 )}
               </View>
-
-              {/* QR + MÃ – GỌN GÀNG */}
               <View style={styles.qrRow}>
                 <View style={styles.qrBox}>
                   <QRCode value={`https://your-app.com/booking/${item.id}`} size={48} />
@@ -193,7 +178,6 @@ export default function HistoryScreen() {
                   {item.id}
                 </Text>
               </View>
-
               {/* NÚT HỦY */}
               {!isCancelled && !isPast && (
                 <TouchableOpacity
@@ -218,7 +202,6 @@ export default function HistoryScreen() {
       </Animated.View>
     );
   };
-
   if (loading) {
     return (
       <View style={styles.center}>
@@ -227,7 +210,6 @@ export default function HistoryScreen() {
       </View>
     );
   }
-
   return (
     <View style={styles.background}>
       {/* HEADER + NÚT BACK */}
@@ -253,7 +235,6 @@ export default function HistoryScreen() {
           </TouchableOpacity>
         </LinearGradient>
       </Animated.View>
-
       <View style={styles.container}>
         {appointments.length === 0 ? (
           <Animated.View entering={ZoomIn.duration(500)} style={styles.empty}>
