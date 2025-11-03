@@ -12,7 +12,7 @@ import ProfileScreen from '../screens/patient/ProfileScreen';
 import SelectDepartment from '../screens/patient/Book_appointment/BookByDate/SelectDepartment';
 import SelectTimeSlot from '../screens/patient/Book_appointment/BookByDate/SelectTimeSlot';
 import ConfirmBooking from '../screens/patient/Book_appointment/BookByDate/ConfirmBooking';
-
+import BookingSuccess from '../screens/patient/Book_appointment/BookByDate/BookingSuccess';
 const Stack = createStackNavigator();
 
 export default function PatientStack() {
@@ -34,6 +34,7 @@ export default function PatientStack() {
 <Stack.Screen name="SelectDepartment" component={SelectDepartment} />
 <Stack.Screen name="SelectTimeSlot" component={SelectTimeSlot} />
 <Stack.Screen name="ConfirmBooking" component={ConfirmBooking} />
+<Stack.Screen name="BookingSuccess" component={BookingSuccess} />
     </Stack.Navigator>
   );
 }
