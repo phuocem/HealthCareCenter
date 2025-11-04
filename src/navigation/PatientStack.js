@@ -3,7 +3,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import HomeScreen from '../screens/patient/HomeScreen';
 import BookingScreen from '../screens/patient/BookingScreen';
 import BookingOptionsScreen from '../screens/patient/BookingOptionsScreen';
-import BookByDoctor from '../screens/patient/Book_appointment/BookByDoctor';
+import BookByDoctor from '../screens/patient/Book_appointment/BookByDoctor/BookByDoctor';
 import BookByDate from '../screens/patient/Book_appointment/BookByDate/BookByDate';
 import SearchDoctorScreen from '../screens/patient/SearchDoctorScreen';
 import AppointmentScreen from '../screens/patient/AppointmentScreen';
@@ -13,6 +13,10 @@ import SelectDepartment from '../screens/patient/Book_appointment/BookByDate/Sel
 import SelectTimeSlot from '../screens/patient/Book_appointment/BookByDate/SelectTimeSlot';
 import ConfirmBooking from '../screens/patient/Book_appointment/BookByDate/ConfirmBooking';
 import BookingSuccess from '../screens/patient/Book_appointment/BookByDate/BookingSuccess';
+import SelectDate from '../screens/patient/Book_appointment/BookByDoctor/SelectDate';
+import SelectTimeSlotDoctor from '../screens/patient/Book_appointment/BookByDoctor/SelectTimeSlotDoctor';
+import ConfirmBookingDoctor from '../screens/patient/Book_appointment/BookByDoctor/ConfirmBookingDoctor';
+import BookSuccessDoctor from '../screens/patient/Book_appointment/BookByDoctor/BookSuccessDoctor';
 const Stack = createStackNavigator();
 
 export default function PatientStack() {
@@ -35,6 +39,10 @@ export default function PatientStack() {
 <Stack.Screen name="SelectTimeSlot" component={SelectTimeSlot} />
 <Stack.Screen name="ConfirmBooking" component={ConfirmBooking} />
 <Stack.Screen name="BookingSuccess" component={BookingSuccess} />
+<Stack.Screen name="SelectDate" component={SelectDate} />
+<Stack.Screen name="SelectTimeSlotDoctor" component={SelectTimeSlotDoctor} />
+<Stack.Screen name="ConfirmBookingDoctor" component={ConfirmBookingDoctor} />
+<Stack.Screen name="BookSuccessDoctor" component={BookSuccessDoctor} />
     </Stack.Navigator>
   );
 }
