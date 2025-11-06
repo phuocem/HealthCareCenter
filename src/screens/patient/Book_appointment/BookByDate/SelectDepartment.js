@@ -37,6 +37,9 @@ export default function SelectDepartment() {
           id,
           name,
           description,
+          services!services_department_id_fkey (
+            price
+          ),
           doctors!doctors_department_id_fkey (
             id,
             name,
@@ -55,7 +58,6 @@ export default function SelectDepartment() {
 
       if (error) throw error;
 
-      // LỌC CHỈ DỮ LIỆU CÓ work_date + TRỐNG
       const validDepts = data
         .map(dept => {
           const validDoctors = dept.doctors.filter(doctor =>
@@ -64,7 +66,14 @@ export default function SelectDepartment() {
               slot.booked_count < slot.max_patients
             )
           );
-          return { ...dept, doctors: validDoctors };
+
+          const servicePrice = dept.services?.[0]?.price || 150000;
+
+          return {
+            ...dept,
+            doctors: validDoctors,
+            price: servicePrice,
+          };
         })
         .filter(dept => dept.doctors.length > 0);
 
@@ -78,7 +87,6 @@ export default function SelectDepartment() {
     }
   };
 
-  // TÌM KIẾM
   useEffect(() => {
     if (!search.trim()) {
       setFiltered(departments);
@@ -95,7 +103,7 @@ export default function SelectDepartment() {
 
   const renderItem = ({ item }) => {
     const hasNote = item.description && item.description.includes('Chỉ nhận');
-    const price = 150000;
+    const price = item.price || 150000;
 
     return (
       <TouchableOpacity
@@ -123,7 +131,6 @@ export default function SelectDepartment() {
 
   return (
     <View style={styles.container}>
-      {/* HEADER */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color="#1F2937" />
@@ -131,7 +138,6 @@ export default function SelectDepartment() {
         <Text style={styles.title}>Chọn chuyên khoa</Text>
       </View>
 
-      {/* TÌM KIẾM */}
       <View style={styles.searchContainer}>
         <Ionicons name="search" size={20} color="#9CA3AF" />
         <TextInput
@@ -144,7 +150,6 @@ export default function SelectDepartment() {
 
       <Text style={styles.hint}>Nhấn vào để xem chức năng chuyên khoa</Text>
 
-      {/* DANH SÁCH */}
       {loading ? (
         <View style={styles.center}>
           <ActivityIndicator size="large" color="#3B82F6" />

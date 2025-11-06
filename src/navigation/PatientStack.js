@@ -3,13 +3,13 @@ import { createStackNavigator } from "@react-navigation/stack";
 import HomeScreen from "../screens/patient/HomeScreen";
 import BookingScreen from "../screens/patient/BookingScreen";
 import BookingOptionsScreen from "../screens/patient/BookingOptionsScreen";
-import BookByDoctor from "../screens/patient/Book_appointment/BookByDoctor";
+import BookByDoctor from "../screens/patient/Book_appointment/BookByDoctor/BookByDoctor";
 import BookByDate from "../screens/patient/Book_appointment/BookByDate/BookByDate";
 import SearchDoctorScreen from "../screens/patient/SearchDoctorScreen";
 import AppointmentScreen from "../screens/patient/AppointmentScreen";
 import HistoryScreen from "../screens/patient/HistoryScreen";
 import ProfileScreen from "../screens/patient/ProfileScreen";
-import EditProfileScreen from "../screens/patient/EditProfileScreen"; // ✨ THÊM DÒNG NÀY
+import EditProfileScreen from "../screens/patient/EditProfileScreen";
 import SelectDepartment from "../screens/patient/Book_appointment/BookByDate/SelectDepartment";
 import SelectTimeSlot from "../screens/patient/Book_appointment/BookByDate/SelectTimeSlot";
 import ConfirmBooking from "../screens/patient/Book_appointment/BookByDate/ConfirmBooking";
