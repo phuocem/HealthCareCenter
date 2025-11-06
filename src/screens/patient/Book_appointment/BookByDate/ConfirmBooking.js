@@ -1,4 +1,3 @@
-// src/screens/patient/Book_appointment/BookByDate/ConfirmBooking.js
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -92,7 +91,6 @@ export default function ConfirmBooking() {
       const dayOfWeek = weekdays[new Date(date).getDay()];
       console.log('Thứ:', dayOfWeek);
 
-      // Kiểm tra khung giờ có tồn tại trong template
       const { data: slotExists, error: checkError } = await supabase
         .from('doctor_schedule_template')
         .select('*')
@@ -104,53 +102,53 @@ export default function ConfirmBooking() {
 
       console.log('Kết quả kiểm tra slot:', { slotExists, checkError });
 
-      if (checkError) throw new Error('Không thể kiểm tra khung giờ.');
+      if (checkError) throw new Error('Không thể kiểm tra khung giờ: ' + checkError.message);
       if (!slotExists) {
         Alert.alert('Lỗi', 'Khung giờ đã bị xóa hoặc không tồn tại. Vui lòng chọn lại.');
         navigation.goBack();
         return;
       }
 
-      // SỬA LỖI 42703: Dùng slot_id thay vì start_time/end_time
       const { data: existing, error: existErr } = await supabase
         .from('appointments')
         .select('id')
         .eq('slot_id', slotExists.id)
-        .eq('date', date);
+        .eq('appointment_date', date);
 
       console.log('Kiểm tra lịch trùng:', { existing, existErr });
 
-      if (existErr) {
-        console.error('Lỗi khi kiểm tra lịch:', existErr);
-        // Không throw để vẫn thử đặt (có thể do cột không tồn tại)
-      }
+      if (existErr) console.error('Lỗi khi kiểm tra lịch:', existErr);
       if (existing && existing.length >= slotExists.max_patients_per_slot) {
         Alert.alert('Thông báo', 'Khung giờ này đã hết chỗ. Vui lòng chọn khung giờ khác.');
         setLoading(false);
         return;
       }
 
-      // GỌI RPC ĐÃ SỬA: Chỉ 5 tham số, không có p_doctor_id
       console.log('Gọi RPC book_appointment_rpc với tham số:', {
         p_user_id: user.id,
+        p_doctor_id: doctor.id,
         p_slot_id: slotExists.id,
         p_patient_name: patientName.trim(),
         p_patient_phone: patientPhone.trim(),
         p_department_id: department.id,
+        p_appointment_date: date,
       });
 
-      const { data: appointmentId, error } = await supabase.rpc('book_appointment_rpc', {
+      const { data, error } = await supabase.rpc('book_appointment_rpc', {
         p_user_id: user.id,
+        p_doctor_id: doctor.id,
         p_slot_id: slotExists.id,
         p_patient_name: patientName.trim(),
         p_patient_phone: patientPhone.trim(),
         p_department_id: department.id,
+        p_appointment_date: date,
       });
 
-      console.log('Kết quả RPC:', { appointmentId, error });
+      console.log('Kết quả RPC:', { data, error });
 
-      if (error) throw error;
-      if (!appointmentId) throw new Error('Không nhận được mã lịch hẹn.');
+      if (error) throw new Error(`Lỗi từ RPC: ${error.message || 'Không xác định'}`);
+      const appointmentId = data.appointment_id;
+      if (!appointmentId) throw new Error('Không nhận được mã lịch hẹn. Kiểm tra lại RPC. Data:', JSON.stringify(data));
 
       const timeStr = `${slot.start_time.slice(0, 5)} - ${slot.end_time.slice(0, 5)}`;
       const dateStr = new Date(date).toLocaleDateString('vi-VN', {

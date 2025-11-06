@@ -40,7 +40,9 @@ export default function HistoryScreen() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data, error } = await supabase
+
+      // Bước 1: Lấy danh sách appointments với doctor_id
+      const { data: apptData, error: apptError } = await supabase
         .from('appointments')
         .select(`
           id,
@@ -54,23 +56,41 @@ export default function HistoryScreen() {
           department_id,
           doctor_schedule_template!inner (
             start_time,
-            end_time,
-            doctor_id,
-            doctors (
-              name,
-              room_number,
-              department_id,
-              departments (
-                name
-              )
-            )
+            end_time
           )
         `)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
-      if (error) throw error;
-      console.log('Dữ liệu appointments:', data); // Log để kiểm tra
-      setAppointments(data || []);
+      if (apptError) throw apptError;
+
+      // Bước 2: Lấy thông tin bác sĩ từ bảng doctors dựa trên doctor_id
+      const doctorIds = apptData.map(appt => appt.doctor_id);
+      const { data: doctorData, error: doctorError } = await supabase
+        .from('doctors')
+        .select('id, name, room_number, department_id')
+        .in('id', doctorIds);
+      if (doctorError) throw doctorError;
+
+      // Bước 3: Lấy thông tin chuyên khoa từ departments
+      const deptIds = doctorData.map(doc => doc.department_id).filter(id => id !== null);
+      const { data: deptData, error: deptError } = deptIds.length > 0
+        ? await supabase.from('departments').select('id, name').in('id', deptIds)
+        : { data: [], error: null };
+      if (deptError) throw deptError;
+
+      // Bước 4: Gộp dữ liệu
+      const appointmentsWithDetails = apptData.map(appt => {
+        const doctor = doctorData.find(doc => doc.id === appt.doctor_id) || {};
+        const dept = deptData.find(d => d.id === doctor.department_id) || {};
+        return {
+          ...appt,
+          doctor,
+          department: dept,
+        };
+      });
+
+      console.log('Dữ liệu appointments với chi tiết:', appointmentsWithDetails);
+      setAppointments(appointmentsWithDetails || []);
     } catch (err) {
       console.error('Lỗi lấy lịch sử:', err);
       Alert.alert('Lỗi', 'Không thể tải lịch sử đặt lịch');
@@ -122,8 +142,8 @@ export default function HistoryScreen() {
 
   const renderAppointment = ({ item, index }) => {
     const slot = item.doctor_schedule_template || {};
-    const doctor = slot.doctors?.[0] || {};
-    const dept = doctor.departments?.[0] || {};
+    const doctor = item.doctor || {};
+    const dept = item.department || {};
     const timeStr = slot.start_time && slot.end_time
       ? `${slot.start_time.slice(0, 5)} - ${slot.end_time.slice(0, 5)}`
       : 'Không xác định';
@@ -157,8 +177,8 @@ export default function HistoryScreen() {
             >
               <View style={styles.headerRow}>
                 <View style={styles.doctorInfo}>
-                  <Text style={styles.doctorName}>{doctor.name || 'Không xác định'}</Text>
-                  <Text style={styles.deptName}>{dept.name || 'Không xác định'}</Text>
+                  <Text style={styles.doctorName}>{doctor.name || `Bác sĩ (ID: ${item.doctor_id || 'Không rõ'})`}</Text>
+                  <Text style={styles.deptName}>{dept.name || 'Chuyên khoa (ID: ' + (doctor.department_id || 'Không rõ') + ')'}</Text>
                 </View>
                 <LinearGradient
                   colors={config.colors}
