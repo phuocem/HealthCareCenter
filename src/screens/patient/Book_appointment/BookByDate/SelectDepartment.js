@@ -9,10 +9,14 @@ import {
   ActivityIndicator,
   FlatList,
   Alert,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
+import { LinearGradient } from 'expo-linear-gradient'; // <-- Cần import LinearGradient
 import { supabase } from '../../../../api/supabase';
+
+// LƯU Ý: Đảm bảo bạn đã cài đặt 'expo-linear-gradient' nếu dùng Expo: expo install expo-linear-gradient
 
 export default function SelectDepartment() {
   const navigation = useNavigation();
@@ -23,6 +27,17 @@ export default function SelectDepartment() {
   const [filtered, setFiltered] = useState([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
+
+  // === FORMAT NGÀY ===
+  const formatHeaderDate = (dateStr) => {
+    const dateObj = new Date(dateStr);
+    const dayNames = ['Chủ nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+    const day = dayNames[dateObj.getDay()];
+    const dateNum = dateObj.getDate();
+    const month = dateObj.getMonth() + 1;
+    return `${day}, ${dateNum}/${month}`;
+  };
+  const headerDate = useMemo(() => formatHeaderDate(date), [date]);
 
   // === CHUYỂN NGÀY → THỨ (TIẾNG VIỆT, ĐÃ TRIM) ===
   const getVietnameseDay = (dateStr) => {
@@ -37,6 +52,7 @@ export default function SelectDepartment() {
     try {
       const targetDay = getVietnameseDay(date);
 
+      // (Giữ nguyên logic truy vấn Supabase)
       const { data, error } = await supabase
         .from('departments')
         .select(`
@@ -114,6 +130,9 @@ export default function SelectDepartment() {
     const hasNote = item.description && item.description.includes('Chỉ nhận');
     const price = item.price || 150000;
 
+    // Tính toán số lượng bác sĩ có sẵn (đã được lọc ở bước fetch)
+    const availableDoctorsCount = item.doctors.length;
+
     return (
       <TouchableOpacity
         style={styles.item}
@@ -121,13 +140,14 @@ export default function SelectDepartment() {
           navigation.navigate('SelectTimeSlot', {
             date,
             department: item,
+            // Chuẩn bị template dữ liệu cho màn hình tiếp theo
             templates: item.doctors.flatMap(d =>
               (d.doctor_schedule_template || []).map(t => ({
                 ...t,
                 doctor_id: d.id,
                 doctors: {
                   id: d.id,
-                  name: d.name || 'Bác sĩ', // ← BẢO VỆ
+                  name: d.name || 'Bác sĩ', 
                   room_number: d.room_number,
                   specialization: d.specialization,
                   experience_years: d.experience_years,
@@ -139,14 +159,20 @@ export default function SelectDepartment() {
         }
       >
         <View style={styles.itemLeft}>
+          {/* Icon (Thay vì số 1) */}
           <View style={styles.iconCircle}>
-            <Text style={styles.iconNumber}>1</Text>
+            <Ionicons name="medical" size={20} color="#FFFFFF" />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={styles.deptName}>{item.name}</Text>
+            {/* Thêm thông tin số lượng bác sĩ */}
+            <Text style={styles.doctorCount}>
+              <Ionicons name="person" size={12} color="#4B5563" /> {availableDoctorsCount} bác sĩ có lịch
+            </Text>
             {hasNote && <Text style={styles.note}>{item.description}</Text>}
           </View>
         </View>
+        
         <View style={styles.itemRight}>
           <Text style={styles.price}>{price.toLocaleString('vi-VN')}đ</Text>
           <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
@@ -159,39 +185,54 @@ export default function SelectDepartment() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color="#1F2937" />
+      {/* HEADER MỚI VỚI GRADIENT */}
+      <LinearGradient
+        colors={['#1E40AF', '#60A5FA']} 
+        style={styles.header}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+      >
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
         <Text style={styles.title}>Chọn chuyên khoa</Text>
+        <Text style={styles.subtitle}>Ngày khám: {headerDate}</Text>
+      </LinearGradient>
+
+      {/* SEARCH CONTAINER MỚI */}
+      <View style={styles.searchContainerWrapper}>
+        <View style={styles.searchContainer}>
+          <Ionicons name="search" size={20} color="#9CA3AF" />
+          <TextInput
+            placeholder="Tìm nhanh chuyên khoa, triệu chứng..."
+            placeholderTextColor="#9CA3AF"
+            style={styles.searchInput}
+            value={search}
+            onChangeText={setSearch}
+            autoCapitalize="none"
+          />
+        </View>
       </View>
 
-      <View style={styles.searchContainer}>
-        <Ionicons name="search" size={20} color="#9CA3AF" />
-        <TextInput
-          placeholder="Tìm nhanh chuyên khoa"
-          style={styles.searchInput}
-          value={search}
-          onChangeText={setSearch}
-          autoCapitalize="none"
-        />
-      </View>
+      <Text style={styles.hint}>Nhấn vào để xem và chọn khung giờ trống</Text>
 
-      <Text style={styles.hint}>Nhấn vào để chọn khung giờ</Text>
-
+      {/* BODY CONTENT */}
       {loading ? (
         <View style={styles.center}>
           <ActivityIndicator size="large" color="#3B82F6" />
-          <Text style={styles.loadingText}>Đang tải chuyên khoa...</Text>
+          <Text style={styles.loadingText}>Đang tải danh sách chuyên khoa...</Text>
         </View>
       ) : filtered.length === 0 ? (
         <View style={styles.center}>
-          <Ionicons name="alert-circle-outline" size={48} color="#9CA3AF" />
+          <Ionicons name="alert-circle-outline" size={48} color="#D1D5DB" />
           <Text style={styles.emptyText}>
             {search
-              ? 'Không tìm thấy chuyên khoa phù hợp'
-              : 'Không có chuyên khoa nào làm việc ngày này'}
+              ? `Không tìm thấy chuyên khoa '${search}'`
+              : `Rất tiếc, ngày ${headerDate} không có chuyên khoa nào làm việc.`}
           </Text>
+          <TouchableOpacity style={styles.backButtonAction} onPress={() => navigation.goBack()}>
+            <Text style={styles.backButtonText}>Chọn ngày khác</Text>
+          </TouchableOpacity>
         </View>
       ) : (
         <FlatList
@@ -199,6 +240,7 @@ export default function SelectDepartment() {
           keyExtractor={keyExtractor}
           renderItem={renderItem}
           showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.listContent}
           initialNumToRender={10}
           maxToRenderPerBatch={10}
           windowSize={10}
@@ -209,55 +251,120 @@ export default function SelectDepartment() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: { flex: 1, backgroundColor: '#F9FAFB' },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingTop: 50,
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    paddingTop: Platform.OS === 'ios' ? 60 : 40,
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
   },
-  title: { fontSize: 20, fontWeight: '700', marginLeft: 12, color: '#1F2937' },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+    marginBottom: 10,
+  },
+  title: { fontSize: 22, fontWeight: '800', color: '#FFFFFF', letterSpacing: -0.3 },
+  subtitle: { fontSize: 14, fontWeight: '500', color: '#E5E7EB', marginTop: 4 },
+
+  searchContainerWrapper: {
+    // Để Search Input nằm hơi chồng lên Header
+    marginTop: -20,
+    marginHorizontal: 16,
+    zIndex: 1,
+  },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginHorizontal: 16,
-    marginTop: 8,
-    padding: 12,
-    backgroundColor: '#F9FAFB',
-    borderRadius: 12,
+    padding: 14,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: '#E5E7EB',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+    elevation: 5,
   },
-  searchInput: { flex: 1, marginLeft: 8, fontSize: 16, color: '#1F2937' },
-  hint: { marginHorizontal: 16, color: '#FB923C', fontSize: 13, marginBottom: 8 },
+  searchInput: { flex: 1, marginLeft: 10, fontSize: 16, color: '#1F2937' },
+  
+  hint: { 
+    marginHorizontal: 24, 
+    color: '#FB923C', 
+    fontSize: 13, 
+    marginTop: 16, 
+    marginBottom: 8,
+    fontWeight: '600',
+  },
+
+  listContent: { 
+    paddingHorizontal: 16, 
+    paddingBottom: 20,
+    paddingTop: 8, // Thêm padding trên để list không dính vào hint
+  },
   item: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    backgroundColor: '#FFFFFF',
     padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderRadius: 12,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 3,
   },
   itemLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
   iconCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#3B82F6',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#059669', // Màu xanh lá cây đậm
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
   },
-  iconNumber: { color: '#fff', fontWeight: '800', fontSize: 14 },
-  deptName: { fontWeight: '700', color: '#1F2937', fontSize: 16 },
-  note: { fontSize: 12, color: '#6B7280', marginTop: 2 },
-  itemRight: { alignItems: 'flex-end' },
-  price: { fontWeight: '700', color: '#1F2937', fontSize: 15 },
+  deptName: { fontWeight: '800', color: '#1F2937', fontSize: 16, marginBottom: 2 },
+  doctorCount: { fontSize: 13, color: '#4B5563', fontWeight: '500' },
+  note: { 
+    fontSize: 12, 
+    color: '#DC2626', 
+    marginTop: 4, 
+    fontWeight: '600',
+    backgroundColor: '#FEF2F2',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    alignSelf: 'flex-start',
+  },
+  itemRight: { alignItems: 'flex-end', justifyContent: 'center' },
+  price: { fontWeight: '800', color: '#1E40AF', fontSize: 16, marginBottom: 4 },
+  
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
-  loadingText: { marginTop: 12, color: '#6B7280' },
-  emptyText: { marginTop: 12, color: '#6B7280', textAlign: 'center', fontSize: 15 },
+  loadingText: { marginTop: 12, color: '#6B7280', fontSize: 15 },
+  emptyText: { marginTop: 12, color: '#6B7280', textAlign: 'center', fontSize: 15, lineHeight: 22 },
+  backButtonAction: {
+    marginTop: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    backgroundColor: '#3B82F6',
+    borderRadius: 8,
+  },
+  backButtonText: { color: '#FFFFFF', fontWeight: '700', fontSize: 16 },
 });

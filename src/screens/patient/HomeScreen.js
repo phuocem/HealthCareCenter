@@ -29,13 +29,19 @@ export default function HomeScreen() {
   // LẤY USER ID TỪ SUPABASE
   useEffect(() => {
     const fetchUser = async () => {
-      const { data: { user }, error } = await supabase.auth.getUser();
-      if (error) {
-        console.error('Lỗi lấy user:', error);
-        return;
-      }
-      if (user?.id) {
-        setUserId(user.id);
+      try {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (error) {
+          console.error('Lỗi lấy user:', error.message);
+          return;
+        }
+        if (user?.id) {
+          setUserId(user.id);
+        } else {
+          console.warn('Không tìm thấy user ID');
+        }
+      } catch (err) {
+        console.error('Lỗi không mong muốn khi lấy user:', err.message);
       }
     };
     fetchUser();
@@ -46,13 +52,23 @@ export default function HomeScreen() {
     if (userId) {
       getUserProfile(userId)
         .then(profile => {
-          setDisplayName(profile.name || 'Bạn');
+          const name = profile?.name || 'Bạn';
+          console.log('Profile name:', name); // Debug
+          setDisplayName(name);
         })
-        .catch(() => {
+        .catch(err => {
+          console.error('Lỗi lấy profile:', err.message);
           // Fallback: email
-          supabase.auth.getUser().then(({ data: { user } }) => {
-            setDisplayName(user?.email?.split('@')[0] || 'Bạn');
-          });
+          supabase.auth.getUser()
+            .then(({ data: { user } }) => {
+              const fallbackName = user?.email?.split('@')[0] || 'Bạn';
+              console.log('Fallback name:', fallbackName); // Debug
+              setDisplayName(fallbackName);
+            })
+            .catch(fallbackErr => {
+              console.error('Lỗi fallback:', fallbackErr.message);
+              setDisplayName('Bạn');
+            });
         });
     }
   }, [userId]);
@@ -95,7 +111,7 @@ export default function HomeScreen() {
       {/* HEADER */}
       <LinearGradient colors={['#1D4ED8', '#38BDF8']} style={styles.header}>
         <Text style={styles.greeting}>Chào mừng trở lại,</Text>
-        <Text style={styles.name}>{displayName}</Text>
+        <Text style={styles.name}>{displayName ? <Text>{displayName}</Text> : <Text>Bạn</Text>}</Text>
         <Text style={styles.subtitle}>Hôm nay bạn cảm thấy thế nào? Hãy bắt đầu!</Text>
       </LinearGradient>
 
@@ -120,15 +136,15 @@ export default function HomeScreen() {
                 style={[
                   styles.card,
                   isLeft ? styles.marginRight : styles.marginLeft,
-                  isSmall && { width: '45%' },
+                  isSmall && { width: '48%' },
                   !item.screen && styles.disabled,
                   { transform: [{ scale: scales[index] }] },
                 ]}
               >
                 <LinearGradient colors={['#E0F2FE', '#BFDBFE']} style={styles.iconWrapper}>
-                  <Ionicons name={item.icon} size={32} color="#1E3A8A" />
+                  <Ionicons name={item.icon} size={28} color="#1E3A8A" />
                 </LinearGradient>
-                <Text style={styles.title}>{item.title}</Text>
+                <Text style={styles.title}><Text>{item.title}</Text></Text>
               </Animated.View>
             </TouchableWithoutFeedback>
           );
@@ -140,7 +156,7 @@ export default function HomeScreen() {
         <Text style={styles.secondaryTitle}>Tin tức sức khỏe mới nhất</Text>
         <View style={styles.newsCard}>
           <Ionicons name="book-outline" size={20} color="#059669" />
-          <Text style={styles.newsText}>10 mẹo duy trì năng lượng suốt cả ngày.</Text>
+          <Text style={styles.newsText}><Text>10 mẹo duy trì năng lượng suốt cả ngày.</Text></Text>
         </View>
       </View>
     </ScrollView>
@@ -186,8 +202,8 @@ const styles = StyleSheet.create({
   infoText: { fontSize: 14, fontWeight: '600', color: '#4B5563', flex: 1, marginLeft: 12 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 16, justifyContent: 'center', marginTop: 30 },
   card: {
-    width: 165,
-    height: 135,
+    width: 180,
+    height: 110,
     backgroundColor: '#FFFFFF',
     borderRadius: 24,
     justifyContent: 'center',
@@ -201,11 +217,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#F1F5F9',
   },
-  marginRight: { marginRight: 10 },
-  marginLeft: { marginLeft: 10 },
+  marginRight: { marginRight: 8 },
+  marginLeft: { marginLeft: 8 },
   disabled: { opacity: 0.4, backgroundColor: '#F1F5F9' },
-  iconWrapper: { borderRadius: 50, padding: 14, marginBottom: 10 },
-  title: { fontSize: 16, fontWeight: '700', color: '#1E293B', marginTop: 4 },
+  iconWrapper: { borderRadius: 40, padding: 12, marginBottom: 6 },
+  title: { fontSize: 15, fontWeight: '700', color: '#1E293B', textAlign: 'center', paddingHorizontal: 4 },
   secondaryContent: { paddingHorizontal: 24, marginTop: 20 },
   secondaryTitle: { fontSize: 18, fontWeight: '700', color: '#1E293B', marginBottom: 15 },
   newsCard: {

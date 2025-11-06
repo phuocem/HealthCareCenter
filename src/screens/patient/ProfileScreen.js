@@ -90,16 +90,10 @@ export default function ProfileScreen() {
 
   if (loading) {
     return (
-      <ImageBackground
-        source={require("../../../assets/images/profile bg-pattern.png")} // Tải ảnh nền đẹp
-        style={styles.loadingBg}
-        blurRadius={10}
-      >
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color={Colors.secondary} />
-          <Text style={styles.loadingText}>Đang tải hồ sơ...</Text>
-        </View>
-      </ImageBackground>
+      <View style={styles.loadingBg}>
+        <ActivityIndicator size="large" color={Colors.primary} />
+        <Text style={styles.loadingText}>Đang tải hồ sơ...</Text>
+      </View>
     );
   }
 
