@@ -11,7 +11,6 @@ import {
   StatusBar,
 } from 'react-native';
 import { supabase } from '../../api/supabase';
-import { createDoctorWithRoleService } from '../../services/doctor/doctorService';
 import { styles } from '../../styles/admin/CreateDoctorScheduleStyles';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -25,6 +24,7 @@ export default function CreateDoctorScheduleScreen() {
   const [loading, setLoading] = useState(false);
   const weekDays = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ nhật'];
 
+  // === ĐỊNH DẠNG GIỜ NHẬP ===
   const formatTimeInput = (text = '') => {
     const cleaned = String(text || '').replace(/[^0-9]/g, '');
     if (cleaned.length === 0) return '';
@@ -34,7 +34,7 @@ export default function CreateDoctorScheduleScreen() {
 
   const isValidTime = (time) => /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(time);
 
-  // === THÊM CA – CHỈ CẬP NHẬT STATE ===
+  // === THÊM CA ===
   const addSlot = (day) => {
     const existing = schedules[day] || [];
     let newSlot;
@@ -79,6 +79,7 @@ export default function CreateDoctorScheduleScreen() {
     }));
   };
 
+  // === XÓA CA ===
   const removeSlot = (day, index) => {
     setSchedules((prev) => {
       const updated = prev[day].filter((_, i) => i !== index);
@@ -90,6 +91,7 @@ export default function CreateDoctorScheduleScreen() {
     });
   };
 
+  // === CẬP NHẬT GIỜ ===
   const updateSlotTime = (day, index, field, value) => {
     const formatted = formatTimeInput(value);
     setSchedules((prev) => {
@@ -99,7 +101,7 @@ export default function CreateDoctorScheduleScreen() {
     });
   };
 
-  // === HOÀN TẤT – CHỈ LÚC NÀY MỚI LƯU DB ===
+  // === HOÀN TẤT → LƯU TẤT CẢ VÀO DATABASE ===
   const handleCreate = async () => {
     const allSlots = Object.values(schedules).flat();
     if (allSlots.length === 0) {
@@ -107,7 +109,7 @@ export default function CreateDoctorScheduleScreen() {
       return;
     }
 
-    // === KIỂM TRA TẤT CẢ TRƯỚC KHI LƯU ===
+    // === KIỂM TRA GIỜ ===
     for (const [day, slots] of Object.entries(schedules)) {
       const sorted = [...slots].sort((a, b) => a.start.localeCompare(b.start));
       for (let i = 0; i < sorted.length; i++) {
@@ -145,42 +147,76 @@ export default function CreateDoctorScheduleScreen() {
 
     setLoading(true);
     try {
-      // === GỘP THÀNH TEMPLATE ===
-      const scheduleList = Object.entries(schedules).map(([day, slots]) => {
-        const sorted = [...slots].sort((a, b) => a.start.localeCompare(b.start));
-        const start = sorted[0].start;
-        const end = sorted[sorted.length - 1].end;
-        return { day_of_week: day, start_time: start, end_time: end };
+      // 1. TẠO USER TRONG AUTH
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: doctorInfo.email,
+        password: doctorInfo.password,
       });
 
-      // === GỌI SERVICE → CHỈ LÚC NÀY MỚI LƯU DB ===
-      const result = await createDoctorWithRoleService(
-        doctorInfo.email,
-        doctorInfo.password,
-        doctorInfo.fullName,
-        doctorInfo.departmentId,
-        scheduleList
-      );
+      if (authError) {
+        if (authError.message.includes('already registered')) {
+          Alert.alert('Email đã tồn tại', 'Vui lòng dùng email khác.');
+        } else {
+          throw authError;
+        }
+        return;
+      }
 
-      if (!result.success) throw new Error(result.message);
+      const userId = authData.user?.id;
+      if (!userId) throw new Error('Không lấy được ID người dùng');
 
-      // === CẬP NHẬT THÔNG TIN BÁC SĨ ===
-      await supabase
+      // 2. INSERT user_profiles → DÙNG role_id
+      const { error: profileError } = await supabase
+        .from('user_profiles')
+        .insert({
+          id: userId,
+          role_id: 2, // ← ID của 'doctor' trong bảng roles
+          full_name: doctorInfo.fullName.trim(),
+          email: doctorInfo.email,
+          created_at: new Date().toISOString(),
+        });
+
+      if (profileError) throw profileError;
+
+      // 3. INSERT doctors
+      const { error: doctorError } = await supabase
         .from('doctors')
-        .update({
-          specialization: doctorInfo.specialization,
-          experience_years: doctorInfo.experienceYears,
-          room_number: doctorInfo.roomNumber,
-          max_patients_per_slot: doctorInfo.maxPatients,
-          bio: doctorInfo.bio,
-        })
-        .eq('id', result.userId);
+        .insert({
+          id: userId,
+          name: doctorInfo.fullName.trim(),
+          department_id: parseInt(doctorInfo.departmentId),
+          specialization: doctorInfo.specialization || null,
+          experience_years: doctorInfo.experienceYears || null,
+          room_number: doctorInfo.roomNumber || null,
+          max_patients_per_slot: doctorInfo.maxPatients || 5,
+          bio: doctorInfo.bio || null,
+        });
+
+      if (doctorError) throw doctorError;
+
+      // 4. GỘP VÀ LƯU LỊCH → CÓ max_patients_per_slot
+      const scheduleList = Object.entries(schedules).map(([day, slots]) => {
+        const sorted = [...slots].sort((a, b) => a.start.localeCompare(b.start));
+        return {
+          doctor_id: userId,
+          day_of_week: day,
+          start_time: sorted[0].start,
+          end_time: sorted[sorted.length - 1].end,
+          max_patients_per_slot: doctorInfo.maxPatients, // ← CỘT ĐÃ ĐƯỢC THÊM
+        };
+      });
+
+      const { error: scheduleError } = await supabase
+        .from('doctor_schedule_template')
+        .insert(scheduleList);
+
+      if (scheduleError) throw scheduleError;
 
       Alert.alert('Thành công!', `Đã tạo bác sĩ: ${doctorInfo.fullName}`, [
         { text: 'OK', onPress: () => navigation.navigate('Bác sĩ') },
       ]);
     } catch (error) {
-      console.error('Lỗi:', error);
+      console.error('Lỗi tạo bác sĩ:', error);
       Alert.alert('Lỗi', error.message || 'Tạo thất bại. Vui lòng thử lại.');
     } finally {
       setLoading(false);
@@ -230,7 +266,7 @@ export default function CreateDoctorScheduleScreen() {
                   <View key={index}>
                     {showBreak && prevEnd === '12:00' && currentStart === '13:00' && (
                       <Text style={styles.lunchBreakText}>
-                        Nghỉ trưa: 12:00 to 13:00
+                        Nghỉ trưa: 12:00 - 13:00
                       </Text>
                     )}
                     <View style={styles.slotContainer}>
@@ -244,7 +280,7 @@ export default function CreateDoctorScheduleScreen() {
                           keyboardType="numeric"
                         />
                       </View>
-                      <Text style={styles.arrow}>to</Text>
+                      <Text style={styles.arrow}>→</Text>
                       <View style={styles.timeBox}>
                         <TextInput
                           placeholder="12:00"

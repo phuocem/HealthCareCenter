@@ -1,5 +1,5 @@
 // src/screens/patient/Book_appointment/BookByDate/BookByDate.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Calendar } from 'react-native-calendars';
 import { supabase } from '../../../../api/supabase';
 
@@ -19,88 +19,52 @@ export default function BookByDate() {
   const [markedDates, setMarkedDates] = useState({});
   const [loading, setLoading] = useState(true);
 
-  // CHUYỂN TIẾNG VIỆT → TIẾNG ANH
-  const vietnameseToEnglish = (viDay) => {
-    const map = {
-      'Thứ 2': 'Monday',
-      'Thứ 3': 'Tuesday',
-      'Thứ 4': 'Wednesday',
-      'Thứ 5': 'Thursday',
-      'Thứ 6': 'Friday',
-      'Thứ 7': 'Saturday',
-      'Chủ nhật': 'Sunday',
-    };
-    return map[viDay] || viDay;
+  const fetchAvailableDates = async () => {
+    setLoading(true);
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const { data, error } = await supabase
+        .rpc('get_available_dates', { 
+          from_date: today, 
+          days_ahead: 90 
+        });
+
+      if (error) throw error;
+
+      const marked = {};
+      if (data && data.length > 0) {
+        data.forEach(item => {
+          marked[item.work_date] = {
+            marked: true,
+            dotColor: '#10B981',
+            selectedColor: '#059669',
+          };
+        });
+      }
+
+      setMarkedDates(marked);
+    } catch (err) {
+      console.error('Lỗi tải lịch:', err);
+      Alert.alert('Lỗi', 'Không thể tải lịch. Vui lòng thử lại.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // LẤY NGÀY CÓ LỊCH TỪ doctor_schedule_template → LOẠI BỎ NULL
-   // Chỉ thay đoạn fetchAvailableDates
-const fetchAvailableDates = async () => {
-  setLoading(true);
-  try {
-    const { data: templates, error } = await supabase
-      .from('doctor_schedule_template')
-      .select('day_of_week, start_time, end_time')
-      .not('doctor_id', 'is', null)
-      .gt('end_time', '00:00:00'); // BỎ SLOT VÔ HIỆU
+  useFocusEffect(
+    useCallback(() => {
+      fetchAvailableDates();
+    }, [])
+  );
 
-    if (error) throw error;
-    if (!templates || templates.length === 0) {
-      Alert.alert('Thông báo', 'Chưa có lịch làm việc hợp lệ.');
-      setLoading(false);
-      return;
-    }
-
-    const validDays = templates
-      .filter(t => t.end_time > t.start_time)
-      .map(t => t.day_of_week);
-
-    const uniqueDays = [...new Set(validDays)];
-    const today = new Date();
-    const dates = {};
-
-    for (let i = 0; i < 90; i++) {
-      const date = new Date(today);
-      date.setDate(today.getDate() + i);
-      const dateStr = date.toISOString().split('T')[0];
-      const dayOfWeekEn = date.toLocaleString('en-US', { weekday: 'long' });
-
-      const hasTemplate = uniqueDays.some(day =>
-        vietnameseToEnglish(day) === dayOfWeekEn
-      );
-
-      if (hasTemplate) {
-        dates[dateStr] = {
-          marked: true,
-          dotColor: '#10B981',
-          selectedColor: '#059669',
-        };
-      }
-    }
-
-    setMarkedDates(dates);
-  } catch (err) {
-    console.error('Lỗi tải lịch:', err);
-    Alert.alert('Lỗi', 'Không thể tải lịch. Vui lòng thử lại.');
-  } finally {
-    setLoading(false);
-  }
-};
-
-  // XỬ LÝ CHỌN NGÀY
   const handleDayPress = (day) => {
-    if (!markedDates[day.dateString]) {
+    if (!markedDates[day.dateString]?.marked) {
       Alert.alert('Không thể đặt', 'Ngày này không có khung giờ khám.');
       return;
     }
-
     setSelectedDate(day.dateString);
     navigation.navigate('SelectDepartment', { date: day.dateString });
   };
-
-  useEffect(() => {
-    fetchAvailableDates();
-  }, []);
 
   return (
     <View style={styles.container}>
@@ -173,7 +137,6 @@ const fetchAvailableDates = async () => {
   );
 }
 
-// === STYLES ===
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
   header: {

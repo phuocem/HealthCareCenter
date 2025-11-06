@@ -1,5 +1,5 @@
 // src/screens/patient/Book_appointment/BookByDate/SelectDepartment.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -11,7 +11,7 @@ import {
   Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../../../../api/supabase';
 
 export default function SelectDepartment() {
@@ -24,50 +24,53 @@ export default function SelectDepartment() {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchDepartments();
-  }, [date]);
+  // === CHUYỂN NGÀY → THỨ (TIẾNG VIỆT, ĐÃ TRIM) ===
+  const getVietnameseDay = (dateStr) => {
+    const date = new Date(dateStr);
+    const dayNames = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
+    return dayNames[date.getDay()].trim();
+  };
 
-  const fetchDepartments = async () => {
+  // === LẤY KHOA CÓ BÁC SĨ LÀM VIỆC NGÀY ĐÓ ===
+  const fetchDepartments = useCallback(async () => {
     setLoading(true);
     try {
+      const targetDay = getVietnameseDay(date);
+
       const { data, error } = await supabase
         .from('departments')
         .select(`
           id,
           name,
           description,
-          services!services_department_id_fkey (
-            price
-          ),
-          doctors!doctors_department_id_fkey (
+          services!services_department_id_fkey (price),
+          doctors!doctors_department_id_fkey!inner (
             id,
             name,
             room_number,
-            appointment_slots!appointment_slots_doctor_id_fkey (
-              id,
-              work_date,
+            specialization,
+            experience_years,
+            doctor_schedule_template!doctor_schedule_template_doctor_id_fkey!inner (
+              day_of_week,
               start_time,
-              end_time,
-              max_patients,
-              booked_count
+              end_time
             )
           )
         `)
-        .order('name');
+        .order('name', { ascending: true });
 
       if (error) throw error;
 
       const validDepts = data
         .map(dept => {
-          const validDoctors = dept.doctors.filter(doctor =>
-            doctor.appointment_slots.some(slot =>
-              slot.work_date === date &&
-              slot.booked_count < slot.max_patients
+          const validDoctors = (dept.doctors || []).filter(doctor =>
+            (doctor.doctor_schedule_template || []).some(t =>
+              t.day_of_week?.trim() === targetDay &&
+              t.end_time > t.start_time
             )
           );
 
-          const servicePrice = dept.services?.[0]?.price || 150000;
+          const servicePrice = dept.services?.[0]?.price ?? 150000;
 
           return {
             ...dept,
@@ -78,30 +81,36 @@ export default function SelectDepartment() {
         .filter(dept => dept.doctors.length > 0);
 
       setDepartments(validDepts);
-      setFiltered(validDepts);
     } catch (err) {
       console.error('Lỗi lấy khoa:', err);
       Alert.alert('Lỗi', 'Không thể tải danh sách chuyên khoa.');
     } finally {
       setLoading(false);
     }
-  };
+  }, [date]);
 
-  useEffect(() => {
-    if (!search.trim()) {
-      setFiltered(departments);
-    } else {
-      const lower = search.toLowerCase();
-      setFiltered(
-        departments.filter(d =>
-          d.name.toLowerCase().includes(lower) ||
-          d.description?.toLowerCase().includes(lower)
-        )
-      );
-    }
+  useFocusEffect(
+    useCallback(() => {
+      fetchDepartments();
+    }, [fetchDepartments])
+  );
+
+  // === TÌM KIẾM ===
+  const filteredDepartments = useMemo(() => {
+    if (!search.trim()) return departments;
+    const lower = search.toLowerCase();
+    return departments.filter(d =>
+      d.name.toLowerCase().includes(lower) ||
+      (d.description && d.description.toLowerCase().includes(lower))
+    );
   }, [search, departments]);
 
-  const renderItem = ({ item }) => {
+  useEffect(() => {
+    setFiltered(filteredDepartments);
+  }, [filteredDepartments]);
+
+  // === RENDER ITEM ===
+  const renderItem = useCallback(({ item }) => {
     const hasNote = item.description && item.description.includes('Chỉ nhận');
     const price = item.price || 150000;
 
@@ -109,7 +118,24 @@ export default function SelectDepartment() {
       <TouchableOpacity
         style={styles.item}
         onPress={() =>
-          navigation.navigate('SelectTimeSlot', { date, department: item })
+          navigation.navigate('SelectTimeSlot', {
+            date,
+            department: item,
+            templates: item.doctors.flatMap(d =>
+              (d.doctor_schedule_template || []).map(t => ({
+                ...t,
+                doctor_id: d.id,
+                doctors: {
+                  id: d.id,
+                  name: d.name || 'Bác sĩ', // ← BẢO VỆ
+                  room_number: d.room_number,
+                  specialization: d.specialization,
+                  experience_years: d.experience_years,
+                },
+                max_patients_per_slot: 5
+              }))
+            )
+          })
         }
       >
         <View style={styles.itemLeft}>
@@ -122,12 +148,14 @@ export default function SelectDepartment() {
           </View>
         </View>
         <View style={styles.itemRight}>
-          <Text style={styles.price}>{price.toLocaleString()}đ</Text>
+          <Text style={styles.price}>{price.toLocaleString('vi-VN')}đ</Text>
           <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
         </View>
       </TouchableOpacity>
     );
-  };
+  }, [date, navigation]);
+
+  const keyExtractor = useCallback(item => item.id.toString(), []);
 
   return (
     <View style={styles.container}>
@@ -145,10 +173,11 @@ export default function SelectDepartment() {
           style={styles.searchInput}
           value={search}
           onChangeText={setSearch}
+          autoCapitalize="none"
         />
       </View>
 
-      <Text style={styles.hint}>Nhấn vào để xem chức năng chuyên khoa</Text>
+      <Text style={styles.hint}>Nhấn vào để chọn khung giờ</Text>
 
       {loading ? (
         <View style={styles.center}>
@@ -159,17 +188,20 @@ export default function SelectDepartment() {
         <View style={styles.center}>
           <Ionicons name="alert-circle-outline" size={48} color="#9CA3AF" />
           <Text style={styles.emptyText}>
-            {search 
-              ? 'Không tìm thấy chuyên khoa phù hợp' 
-              : 'Không có chuyên khoa nào khả dụng ngày này'}
+            {search
+              ? 'Không tìm thấy chuyên khoa phù hợp'
+              : 'Không có chuyên khoa nào làm việc ngày này'}
           </Text>
         </View>
       ) : (
         <FlatList
           data={filtered}
-          keyExtractor={item => item.id.toString()}
+          keyExtractor={keyExtractor}
           renderItem={renderItem}
           showsVerticalScrollIndicator={false}
+          initialNumToRender={10}
+          maxToRenderPerBatch={10}
+          windowSize={10}
         />
       )}
     </View>
@@ -192,7 +224,8 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    margin: 16,
+    marginHorizontal: 16,
+    marginTop: 8,
     padding: 12,
     backgroundColor: '#F9FAFB',
     borderRadius: 12,

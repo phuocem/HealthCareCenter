@@ -1,4 +1,4 @@
-// src/screens/admin/CreateDoctorInfoScreen.js
+// src/screens/admin/CreateDoctorAccountScreen.js
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
@@ -17,8 +17,9 @@ import { styles } from '../../styles/admin/CreateDoctorAccountStyles';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
 
-export default function CreateDoctorInfoScreen() {
+export default function CreateDoctorAccountScreen() {
   const navigation = useNavigation();
+
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -41,14 +42,16 @@ export default function CreateDoctorInfoScreen() {
   const maxRef = useRef(null);
   const bioRef = useRef(null);
 
+  // === LẤY DANH SÁCH KHOA ===
   useEffect(() => {
     const fetchDepartments = async () => {
       const { data, error } = await supabase
         .from('departments')
-        .select('*')
+        .select('id, name')
         .order('name');
+
       if (error) {
-        Alert.alert('Lỗi', 'Không thể tải khoa.');
+        Alert.alert('Lỗi', 'Không thể tải danh sách khoa.');
       } else {
         setDepartments(data || []);
         setFilteredDepts(data || []);
@@ -57,6 +60,7 @@ export default function CreateDoctorInfoScreen() {
     fetchDepartments();
   }, []);
 
+  // === TÌM KIẾM KHOA ===
   useEffect(() => {
     const filtered = departments.filter((dep) =>
       dep.name.toLowerCase().includes(searchDept.toLowerCase())
@@ -64,6 +68,7 @@ export default function CreateDoctorInfoScreen() {
     setFilteredDepts(filtered);
   }, [searchDept, departments]);
 
+  // === XÁC THỰC ===
   const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const isValidPassword = (pwd) => pwd.length >= 6;
 
@@ -72,9 +77,10 @@ export default function CreateDoctorInfoScreen() {
     return dep ? dep.name : 'Chọn khoa';
   };
 
+  // === TIẾP TỤC → CHỈ TRUYỀN DỮ LIỆU, KHÔNG LƯU DB ===
   const handleNext = () => {
     if (!fullName.trim() || !email.trim() || !password || !departmentId) {
-      Alert.alert('Thiếu', 'Vui lòng nhập đầy đủ các trường bắt buộc.');
+      Alert.alert('Thiếu thông tin', 'Vui lòng nhập đầy đủ các trường bắt buộc.');
       return;
     }
     if (!isValidEmail(email)) {
@@ -86,25 +92,32 @@ export default function CreateDoctorInfoScreen() {
       return;
     }
 
-    // Trong handleNext() → SỬA TÊN ROUTE
-navigation.navigate('Lịch làm việc', {  // ĐÃ ĐỔI TỪ "Lịch làm việc bác sĩ"
-  doctorInfo: {
-    fullName,
-    email,
-    password,
-    specialization,
-    experienceYears: experienceYears ? parseInt(experienceYears, 10) : 0,
-    roomNumber,
-    maxPatients: maxPatients ? parseInt(maxPatients, 10) : 5,
-    bio,
-    departmentId,
-  },
-});
+    // CHỈ TRUYỀN DỮ LIỆU QUA MÀN HÌNH LỊCH
+    navigation.navigate('Lịch làm việc', {
+      doctorInfo: {
+        fullName,
+        email,
+        password,
+        specialization,
+        experienceYears: experienceYears ? parseInt(experienceYears) : 0,
+        roomNumber,
+        maxPatients: maxPatients ? parseInt(maxPatients) : 5,
+        bio,
+        departmentId,
+      },
+    });
   };
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-      <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
         <Text style={styles.title}>Tạo tài khoản bác sĩ (1/2)</Text>
 
         {/* Full Name */}
@@ -162,15 +175,17 @@ navigation.navigate('Lịch làm việc', {  // ĐÃ ĐỔI TỪ "Lịch làm vi
         {/* Khoa */}
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Khoa *</Text>
-          <TouchableOpacity style={styles.dropdownButton} onPress={() => setDeptModalVisible(true)}>
+          <TouchableOpacity
+            style={styles.dropdownButton}
+            onPress={() => setDeptModalVisible(true)}
+          >
             <Icon name="business-outline" size={20} color="#007AFF" style={styles.inputIcon} />
             <Text style={styles.dropdownText}>{selectedDepartmentName()}</Text>
             <Icon name="chevron-down" size={20} color="#007AFF" />
           </TouchableOpacity>
         </View>
 
-        {/* Chuyên môn, Kinh nghiệm, Phòng, Số bệnh nhân, Tiểu sử */}
-        {/* ... (giữ nguyên như cũ) */}
+        {/* Chuyên môn */}
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Chuyên môn</Text>
           <View style={styles.inputWrapper}>
@@ -178,13 +193,14 @@ navigation.navigate('Lịch làm việc', {  // ĐÃ ĐỔI TỪ "Lịch làm vi
             <TextInput
               ref={specRef}
               style={styles.input}
-              placeholder="Tim mạch..."
+              placeholder="Tim mạch, Nội khoa..."
               value={specialization}
               onChangeText={setSpecialization}
             />
           </View>
         </View>
 
+        {/* Kinh nghiệm */}
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Số năm kinh nghiệm</Text>
           <View style={styles.inputWrapper}>
@@ -200,6 +216,7 @@ navigation.navigate('Lịch làm việc', {  // ĐÃ ĐỔI TỪ "Lịch làm vi
           </View>
         </View>
 
+        {/* Phòng */}
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Số phòng</Text>
           <View style={styles.inputWrapper}>
@@ -207,13 +224,14 @@ navigation.navigate('Lịch làm việc', {  // ĐÃ ĐỔI TỪ "Lịch làm vi
             <TextInput
               ref={roomRef}
               style={styles.input}
-              placeholder="101"
+              placeholder="202"
               value={roomNumber}
               onChangeText={setRoomNumber}
             />
           </View>
         </View>
 
+        {/* Số bệnh nhân/ca */}
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Số bệnh nhân/ca</Text>
           <View style={styles.inputWrapper}>
@@ -229,6 +247,7 @@ navigation.navigate('Lịch làm việc', {  // ĐÃ ĐỔI TỪ "Lịch làm vi
           </View>
         </View>
 
+        {/* Tiểu sử */}
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Tiểu sử</Text>
           <View style={[styles.inputWrapper, { height: 100, alignItems: 'flex-start' }]}>
@@ -236,7 +255,7 @@ navigation.navigate('Lịch làm việc', {  // ĐÃ ĐỔI TỪ "Lịch làm vi
             <TextInput
               ref={bioRef}
               style={[styles.input, { height: 80, textAlignVertical: 'top' }]}
-              placeholder="Giới thiệu ngắn..."
+              placeholder="Giới thiệu ngắn gọn..."
               value={bio}
               onChangeText={setBio}
               multiline
@@ -250,7 +269,7 @@ navigation.navigate('Lịch làm việc', {  // ĐÃ ĐỔI TỪ "Lịch làm vi
         </TouchableOpacity>
       </ScrollView>
 
-      {/* MODAL KHOA */}
+      {/* MODAL CHỌN KHOA */}
       <Modal visible={deptModalVisible} animationType="slide" transparent>
         <TouchableWithoutFeedback onPress={() => setDeptModalVisible(false)}>
           <View style={styles.modalOverlay} />

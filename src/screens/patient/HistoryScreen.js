@@ -16,6 +16,7 @@ import { supabase } from '../../api/supabase';
 import QRCode from 'react-native-qrcode-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInUp, ZoomIn, FadeInDown } from 'react-native-reanimated';
+
 const Colors = {
   primary: '#1D4ED8',
   secondary: '#38BDF8',
@@ -28,6 +29,7 @@ const Colors = {
   shadow: '#000',
   bg: '#F8FAFC',
 };
+
 export default function HistoryScreen() {
   const navigation = useNavigation();
   const [appointments, setAppointments] = useState([]);
@@ -38,7 +40,6 @@ export default function HistoryScreen() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-
       const { data, error } = await supabase
         .from('appointments')
         .select(`
@@ -48,15 +49,18 @@ export default function HistoryScreen() {
           patient_phone,
           created_at,
           appointment_date,
-          appointment_slots!inner (
+          slot_id,
+          doctor_id,
+          department_id,
+          doctor_schedule_template!inner (
             start_time,
             end_time,
             doctor_id,
-            doctors!inner (
+            doctors (
               name,
               room_number,
               department_id,
-              departments!inner (
+              departments (
                 name
               )
             )
@@ -65,6 +69,7 @@ export default function HistoryScreen() {
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
       if (error) throw error;
+      console.log('Dữ liệu appointments:', data); // Log để kiểm tra
       setAppointments(data || []);
     } catch (err) {
       console.error('Lỗi lấy lịch sử:', err);
@@ -74,9 +79,15 @@ export default function HistoryScreen() {
       setRefreshing(false);
     }
   };
-  useEffect(() => { fetchAppointments(); }, []);
 
-  const onRefresh = () => { setRefreshing(true); fetchAppointments(); };
+  useEffect(() => {
+    fetchAppointments();
+  }, []);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchAppointments();
+  };
 
   const handleCancel = (id) => {
     Alert.alert(
@@ -94,7 +105,6 @@ export default function HistoryScreen() {
                 .update({ status: 'cancelled' })
                 .eq('id', id);
               if (error) throw error;
-
               setAppointments(prev =>
                 prev.map(appt =>
                   appt.id === id ? { ...appt, status: 'cancelled' } : appt
@@ -109,25 +119,32 @@ export default function HistoryScreen() {
       ]
     );
   };
-  const renderAppointment = ({ item, index }) => {
-    const slot = item.appointment_slots;
-    const doctor = slot.doctors;
-    const dept = doctor.departments;
 
-    const timeStr = `${slot.start_time.slice(0, 5)} - ${slot.end_time.slice(0, 5)}`;
-    const dateStr = new Date(item.appointment_date).toLocaleDateString('vi-VN', {
-      weekday: 'short',
-      day: '2-digit',
-      month: '2-digit',
-    });
+  const renderAppointment = ({ item, index }) => {
+    const slot = item.doctor_schedule_template || {};
+    const doctor = slot.doctors?.[0] || {};
+    const dept = doctor.departments?.[0] || {};
+    const timeStr = slot.start_time && slot.end_time
+      ? `${slot.start_time.slice(0, 5)} - ${slot.end_time.slice(0, 5)}`
+      : 'Không xác định';
+    const dateStr = item.appointment_date
+      ? new Date(item.appointment_date).toLocaleDateString('vi-VN', {
+          timeZone: 'Asia/Ho_Chi_Minh',
+          weekday: 'short',
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+        })
+      : 'Không xác định';
     const isCancelled = item.status === 'cancelled';
-    const isPast = new Date(item.appointment_date) < new Date();
+    const isPast = item.appointment_date ? new Date(item.appointment_date) < new Date() : false;
     const statusConfig = {
       confirmed: { colors: [Colors.primary, Colors.secondary], text: 'Đã xác nhận', icon: 'checkmark-circle' },
       cancelled: { colors: ['#EF4444', '#F87171'], text: 'Đã hủy', icon: 'close-circle' },
       past: { colors: ['#6B7280', '#9CA3AF'], text: 'Đã khám', icon: 'checkmark-done' },
     };
     const config = statusConfig[item.status === 'confirmed' ? 'confirmed' : item.status === 'cancelled' ? 'cancelled' : 'past'];
+
     return (
       <Animated.View entering={FadeInUp.delay(index * 60).duration(400)} style={styles.cardWrapper}>
         <TouchableOpacity activeOpacity={0.92} disabled={isCancelled}>
@@ -140,8 +157,8 @@ export default function HistoryScreen() {
             >
               <View style={styles.headerRow}>
                 <View style={styles.doctorInfo}>
-                  <Text style={styles.doctorName}>{doctor.name}</Text>
-                  <Text style={styles.deptName}>{dept.name}</Text>
+                  <Text style={styles.doctorName}>{doctor.name || 'Không xác định'}</Text>
+                  <Text style={styles.deptName}>{dept.name || 'Không xác định'}</Text>
                 </View>
                 <LinearGradient
                   colors={config.colors}
@@ -202,6 +219,7 @@ export default function HistoryScreen() {
       </Animated.View>
     );
   };
+
   if (loading) {
     return (
       <View style={styles.center}>
@@ -210,6 +228,7 @@ export default function HistoryScreen() {
       </View>
     );
   }
+
   return (
     <View style={styles.background}>
       {/* HEADER + NÚT BACK */}
@@ -227,9 +246,7 @@ export default function HistoryScreen() {
           >
             <Ionicons name="arrow-back" size={26} color="#FFF" />
           </TouchableOpacity>
-
           <Text style={styles.title}>Lịch sử đặt lịch</Text>
-
           <TouchableOpacity onPress={onRefresh} style={styles.refreshButton}>
             <Ionicons name="refresh" size={24} color="#FFF" />
           </TouchableOpacity>
@@ -309,13 +326,10 @@ const styles = StyleSheet.create({
   },
   title: { fontSize: 22, fontWeight: '800', color: '#FFF' },
   refreshButton: { padding: 4 },
-
   container: { flex: 1 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   loadingText: { marginTop: 12, fontSize: 16, color: Colors.textPrimary, fontWeight: '600' },
-
   list: { padding: 16, paddingTop: 14 },
-
   cardWrapper: { marginBottom: 14 },
   card: {
     borderRadius: 22,
@@ -330,7 +344,6 @@ const styles = StyleSheet.create({
   },
   cancelledCard: { opacity: 0.7 },
   gradient: { padding: 16 },
-
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -349,7 +362,6 @@ const styles = StyleSheet.create({
     gap: 5,
   },
   statusText: { color: '#FFF', fontSize: 11.5, fontWeight: '700' },
-
   infoRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -363,7 +375,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   infoValue: { marginLeft: 6, fontSize: 13.5, fontWeight: '700', color: Colors.textPrimary },
-
   qrRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -390,7 +401,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     flex: 1,
   },
-
   cancelButton: { marginTop: 10, borderRadius: 14, overflow: 'hidden' },
   cancelGradient: {
     flexDirection: 'row',
@@ -400,7 +410,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   cancelText: { color: '#FFF', fontWeight: '700', fontSize: 14, marginLeft: 6 },
-
   empty: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
   emptyIcon: {
     width: 100,

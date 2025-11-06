@@ -1,5 +1,5 @@
 // src/screens/patient/Book_appointment/BookByDate/SelectTimeSlot.js
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -18,80 +18,120 @@ import { supabase } from '../../../../api/supabase';
 export default function SelectTimeSlot() {
   const navigation = useNavigation();
   const route = useRoute();
-  const { date, department } = route.params;
+  const { date, department, templates } = route.params;
 
-  const [slots, setSlots] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const fetchAvailableSlots = useCallback(async (isRefresh = false) => {
+  // === TẠO KHUNG GIỜ 1 TIẾNG 30 PHÚT ===
+  const timeSlots = useMemo(() => {
+    const slots = [];
+    const duration = 90; // 1 tiếng 30 phút
+
+    templates.forEach(t => {
+      const [startH, startM] = t.start_time.split(':').map(Number);
+      const [endH, endM] = t.end_time.split(':').map(Number);
+
+      let currentH = startH;
+      let currentM = startM;
+
+      while (
+        currentH < endH ||
+        (currentH === endH && currentM < endM)
+      ) {
+        const startStr = `${currentH.toString().padStart(2, '0')}:${currentM.toString().padStart(2, '0')}`;
+        const totalMinutes = currentH * 60 + currentM + duration;
+        const endSlotH = Math.floor(totalMinutes / 60);
+        const endSlotM = totalMinutes % 60;
+        const endStr = `${endSlotH.toString().padStart(2, '0')}:${endSlotM.toString().padStart(2, '0')}`;
+
+        // Kiểm tra không vượt quá end_time
+        if (
+          endSlotH < endH ||
+          (endSlotH === endH && endSlotM <= endM)
+        ) {
+          slots.push({
+            id: `${t.doctor_id || 'unknown'}_${startStr}`, // KEY DUY NHẤT
+            doctor_id: t.doctor_id,
+            doctor_name: t.doctors?.name || 'Bác sĩ',
+            room_number: t.doctors?.room_number,
+            avatar_url: t.doctors?.avatar_url,
+            specialization: t.doctors?.specialization,
+            experience_years: t.doctors?.experience_years,
+            start_time: startStr,
+            end_time: endStr,
+            max_patients: 5,
+            booked_count: 0,
+          });
+        } else {
+          break; // Dừng nếu vượt quá
+        }
+
+        currentH = endSlotH;
+        currentM = endSlotM;
+      }
+    });
+
+    return slots;
+  }, [templates]);
+
+  const loadData = useCallback(async (isRefresh = false) => {
     if (!isRefresh) setLoading(true);
-    else setRefreshing(true);
 
     try {
-      const doctorIds = department.doctors.map(d => d.id);
-
-      const { data, error } = await supabase
-        .rpc('get_available_slots', {
-          target_date: date,
-          doctor_ids: doctorIds,
-        });
-
-      if (error) throw error;
+      const finalSlots = timeSlots
+        .map(slot => ({
+          ...slot,
+          available: slot.max_patients - slot.booked_count,
+        }))
+        .filter(s => s.available > 0);
 
       const grouped = {};
-      data.forEach(row => {
-        const docId = row.doctor_id;
-        if (!grouped[docId]) {
-          grouped[docId] = {
+      finalSlots.forEach(s => {
+        const id = s.doctor_id;
+        if (!grouped[id]) {
+          grouped[id] = {
             doctor: {
-              id: docId,
-              name: row.doctor_name,
-              room_number: row.room_number,
-              avatar_url: row.avatar_url,
-              specialization: row.specialization,
-              experience_years: row.experience_years,
+              id,
+              name: s.doctor_name,
+              room_number: s.room_number,
+              avatar_url: s.avatar_url,
+              specialization: s.specialization,
+              experience_years: s.experience_years,
             },
             slots: [],
           };
         }
-        const available = row.max_patients - row.booked_count;
-        if (available > 0) {
-          grouped[docId].slots.push({
-            id: row.slot_id,
-            start_time: row.start_time,
-            end_time: row.end_time,
-            available,
-          });
-        }
+        grouped[id].slots.push({
+          id: s.id,
+          start_time: s.start_time,
+          end_time: s.end_time,
+          available: s.available,
+        });
       });
 
-      const result = Object.values(grouped).filter(g => g.slots.length > 0);
-      setSlots(result);
+      setSlots(Object.values(grouped));
     } catch (err) {
-      console.error('Lỗi lấy giờ:', err);
-      Alert.alert('Lỗi', 'Không thể tải khung giờ. Vui lòng thử lại.');
+      Alert.alert('Lỗi', 'Không thể tải khung giờ.');
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [date, department.doctors]);
+  }, [timeSlots]);
+
+  const [slots, setSlots] = useState([]);
 
   useEffect(() => {
-    fetchAvailableSlots();
-  }, [fetchAvailableSlots]);
+    loadData();
+  }, [loadData]);
 
   const onRefresh = () => {
-    fetchAvailableSlots(true);
-  };
-
-  const formatTime = (time) => {
-    if (!time) return '';
-    return time.toString().slice(0, 5);
+    setRefreshing(true);
+    loadData(true);
   };
 
   const renderSlot = (slot, doctor) => {
-    const timeStr = `${formatTime(slot.start_time)} - ${formatTime(slot.end_time)}`;
+    const timeStr = `${slot.start_time} - ${slot.end_time}`;
     const isLow = slot.available <= 2;
     const isCritical = slot.available === 1;
 
@@ -138,7 +178,7 @@ export default function SelectTimeSlot() {
             </View>
           )}
           <View style={styles.doctorInfo}>
-            <Text style={styles.doctorName}>{doctor.name || 'Bác sĩ'}</Text>
+            <Text style={styles.doctorName}>{doctor.name}</Text>
             {doctor.specialization && (
               <Text style={styles.specialization}>{doctor.specialization}</Text>
             )}
@@ -156,15 +196,11 @@ export default function SelectTimeSlot() {
         </View>
 
         <View style={styles.slotsContainer}>
-          {item.slots.length > 0 ? (
-            item.slots.map((slot, idx) => (
-              <View key={slot.id} style={idx > 0 && styles.slotMargin}>
-                {renderSlot(slot, doctor)}
-              </View>
-            ))
-          ) : (
-            <Text style={styles.noSlot}>Không còn khung giờ</Text>
-          )}
+          {item.slots.map((slot, idx) => (
+            <View key={slot.id} style={idx > 0 && styles.slotMargin}>
+              {renderSlot(slot, doctor)}
+            </View>
+          ))}
         </View>
       </View>
     );
@@ -187,14 +223,13 @@ export default function SelectTimeSlot() {
     return (
       <View style={styles.center}>
         <ActivityIndicator size="large" color="#3B82F6" />
-        <Text style={styles.loadingText}>Đang tìm khung giờ trống...</Text>
+        <Text style={styles.loadingText}>Đang tạo khung giờ...</Text>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      {/* HEADER */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#1F2937" />
@@ -202,7 +237,6 @@ export default function SelectTimeSlot() {
         <Text style={styles.title}>Chọn giờ khám</Text>
       </View>
 
-      {/* INFO BAR */}
       <View style={styles.info}>
         <Text style={styles.infoText}>
           {department.name} • {new Date(date).toLocaleDateString('vi-VN', {
@@ -214,7 +248,6 @@ export default function SelectTimeSlot() {
         </Text>
       </View>
 
-      {/* LIST */}
       <FlatList
         data={slots}
         keyExtractor={item => item.doctor.id}
@@ -230,7 +263,6 @@ export default function SelectTimeSlot() {
   );
 }
 
-// === STYLES HIỆN ĐẠI, MƯỢT, ĐẸP ===
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F9FAFB' },
   header: {
@@ -295,7 +327,7 @@ const styles = StyleSheet.create({
   slotMargin: { marginTop: 8 },
   slotButton: {
     backgroundColor: '#F0FDF4',
-    padding: 14,
+    padding: 16,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#BBF7D0',
@@ -305,8 +337,7 @@ const styles = StyleSheet.create({
   },
   slotButtonWarning: { backgroundColor: '#FFFBEB', borderColor: '#FDBA74' },
   slotButtonCritical: { backgroundColor: '#FEF2F2', borderColor: '#FCA5A5' },
-  slotTime: { fontWeight: '600', color: '#166534', fontSize: 15 },
+  slotTime: { fontWeight: '600', color: '#166534', fontSize: 16 },
   slotAvailable: { fontSize: 13, color: '#16A34A', fontWeight: '500' },
   slotAvailableWarning: { color: '#DC2626' },
-  noSlot: { color: '#9CA3AF', fontStyle: 'italic', textAlign: 'center', marginTop: 8 },
 });
