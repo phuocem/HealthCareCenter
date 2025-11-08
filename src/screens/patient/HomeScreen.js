@@ -202,8 +202,8 @@ const styles = StyleSheet.create({
   infoText: { fontSize: 14, fontWeight: '600', color: '#4B5563', flex: 1, marginLeft: 12 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 16, justifyContent: 'center', marginTop: 30 },
   card: {
-    width: 180,
-    height: 110,
+    width: 150,
+    height: 100,
     backgroundColor: '#FFFFFF',
     borderRadius: 24,
     justifyContent: 'center',
