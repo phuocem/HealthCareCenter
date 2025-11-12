@@ -33,8 +33,6 @@ export default function PatientStack() {
       <Stack.Screen name="AppointmentScreen" component={AppointmentScreen} />
       <Stack.Screen name="HistoryScreen" component={HistoryScreen} />
       <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
-
-      {/* ✨ THÊM DÒNG NÀY */}
       <Stack.Screen name="EditProfile" component={EditProfileScreen} />
 
       <Stack.Screen name="SelectDepartment" component={SelectDepartment} />
