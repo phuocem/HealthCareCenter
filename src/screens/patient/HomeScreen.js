@@ -86,11 +86,6 @@ export default function HomeScreen() {
     { title: "Lịch sử", icon: "time-outline", screen: "HistoryScreen" },
     { title: "Hồ sơ", icon: "person-outline", screen: "ProfileScreen" },
     { title: "Theo dõi", icon: "pulse-outline", screen: null },
-    {
-      title: "Tìm bác sĩ",
-      icon: "search-outline",
-      screen: "SearchDoctorScreen",
-    },
     { title: "Cộng đồng", icon: "people-outline", screen: null },
   ];
 

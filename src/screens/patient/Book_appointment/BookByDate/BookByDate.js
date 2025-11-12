@@ -17,8 +17,8 @@ import { supabase } from '../../../../api/supabase';
 // Định nghĩa màu sắc custom
 const AVAILABLE_COLOR_BG = '#ECFDF5'; // Nền xanh lá nhạt cho ngày có lịch
 const AVAILABLE_COLOR_BORDER = '#10B981'; // Viền xanh lá đậm
-const AVAILABLE_TEXT_COLOR = '#111827'; // <--- ĐÃ ĐỔI SANG MÀU ĐEN ĐẬM HƠN
-const SELECTED_COLOR = '#059669'; // Màu nền khi ngày được chọn
+const AVAILABLE_TEXT_COLOR = '#111827'; 
+const SELECTED_COLOR = '#059669'; 
 
 export default function BookByDate() {
   const navigation = useNavigation();

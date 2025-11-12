@@ -5,7 +5,6 @@ import BookingScreen from "../screens/patient/BookingScreen";
 import BookingOptionsScreen from "../screens/patient/BookingOptionsScreen";
 import BookByDoctor from "../screens/patient/Book_appointment/BookByDoctor/BookByDoctor";
 import BookByDate from "../screens/patient/Book_appointment/BookByDate/BookByDate";
-import SearchDoctorScreen from "../screens/patient/SearchDoctorScreen";
 import AppointmentScreen from "../screens/patient/AppointmentScreen";
 import HistoryScreen from "../screens/patient/HistoryScreen";
 import ProfileScreen from "../screens/patient/ProfileScreen";
@@ -29,7 +28,6 @@ export default function PatientStack() {
       />
       <Stack.Screen name="BookByDoctor" component={BookByDoctor} />
       <Stack.Screen name="BookByDate" component={BookByDate} />
-      <Stack.Screen name="SearchDoctorScreen" component={SearchDoctorScreen} />
       <Stack.Screen name="AppointmentScreen" component={AppointmentScreen} />
       <Stack.Screen name="HistoryScreen" component={HistoryScreen} />
       <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
