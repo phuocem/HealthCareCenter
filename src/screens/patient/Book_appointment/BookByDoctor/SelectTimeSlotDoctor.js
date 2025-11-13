@@ -18,12 +18,8 @@ const Colors = {
   primary: '#1D4ED8',
   textPrimary: '#1E293B',
   textSecondary: '#4B5563',
-  success: '#10B981',
   bg: '#F8FAFC',
   white: '#FFFFFF',
-  lightBlue: '#DBEAFE',
-  disabled: '#E5E7EB',
-  booked: '#FCA5A5',
 };
 
 export default function SelectTimeSlotDoctor() {
@@ -34,7 +30,6 @@ export default function SelectTimeSlotDoctor() {
   const [timeSlots, setTimeSlots] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // BẢO VỆ: Kiểm tra doctor + selectedDate
   useEffect(() => {
     if (!doctor?.id || !selectedDate) {
       Alert.alert('Lỗi', 'Thiếu thông tin bác sĩ hoặc ngày khám');
@@ -42,9 +37,12 @@ export default function SelectTimeSlotDoctor() {
     }
   }, [doctor, selectedDate, navigation]);
 
-  // LẤY KHUNG GIỜ TRỐNG
   useEffect(() => {
     if (doctor?.id && selectedDate) {
+      console.log('========== SELECT TIME SLOT ==========');
+      console.log('Bác sĩ:', doctor.name, '| ID:', doctor.id);
+      console.log('Ngày khám:', selectedDate);
+      console.log('=====================================');
       fetchAvailableTimeSlots();
     }
   }, [doctor?.id, selectedDate]);
@@ -56,36 +54,41 @@ export default function SelectTimeSlotDoctor() {
     try {
       // 1. LẤY NGÀY TRONG TUẦN
       const date = new Date(selectedDate);
-      const dayOfWeekNum = date.getDay(); // 0: CN, 1: T2, ...
       const dayMap = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
-      const dayOfWeek = dayMap[dayOfWeekNum];
+      const dayOfWeek = dayMap[date.getDay()];
+      console.log('Ngày trong tuần:', dayOfWeek);
 
-      // 2. LẤY LỊCH MẪU
+      // 2. LẤY LỊCH MẪU + ID
       const { data: templates, error: tempError } = await supabase
         .from('doctor_schedule_template')
-        .select('start_time, end_time, max_patients_per_slot')
+        .select('id, start_time, end_time, max_patients_per_slot')
         .eq('doctor_id', doctor.id)
         .eq('day_of_week', dayOfWeek)
         .order('start_time');
 
       if (tempError) throw tempError;
+      console.log('Lịch mẫu từ DB:', templates);
+
       if (!templates || templates.length === 0) {
+        console.log('Không có lịch mẫu cho ngày này');
         setTimeSlots([]);
         setLoading(false);
         return;
       }
 
-      // 3. TẠO SLOT 30 PHÚT
+      // 3. TẠO SLOT 30 PHÚT + GÁN slot_id
       const rawSlots = [];
+      const slotIdToTimestamp = {}; // Map: slot_id → timestamp
+
       templates.forEach(t => {
         const start = new Date(`${selectedDate}T${t.start_time}`);
         const end = new Date(`${selectedDate}T${t.end_time}`);
         let current = new Date(start);
 
         while (current < end) {
+          const timestamp = current.getTime();
           const slotStart = current.toTimeString().slice(0, 5);
           const slotEnd = new Date(current.getTime() + 30 * 60 * 1000).toTimeString().slice(0, 5);
-          const timestamp = current.getTime();
 
           rawSlots.push({
             start: slotStart,
@@ -93,34 +96,58 @@ export default function SelectTimeSlotDoctor() {
             display: `${slotStart} - ${slotEnd}`,
             timestamp,
             max_patients: t.max_patients_per_slot || 5,
+            slot_id: t.id, // GÁN slot_id
           });
+
+          // Lưu ánh xạ: slot_id → timestamp
+          slotIdToTimestamp[t.id] = timestamp;
+
           current = new Date(current.getTime() + 30 * 60 * 1000);
         }
       });
 
-      // 4. LẤY SỐ LƯỢNG ĐÃ ĐẶT
-      const slotTimestamps = rawSlots.map(s => s.timestamp);
+      console.log('Tổng số slot 30 phút:', rawSlots.length);
+      console.log('Danh sách slot:', rawSlots.map(s => `${s.display} (slot_id: ${s.slot_id})`));
+
+      // 4. LẤY SỐ LƯỢNG ĐÃ ĐẶT DỰA TRÊN slot_id
+      const slotIds = rawSlots.map(s => s.slot_id);
       const { data: booked, error: bookError } = await supabase
         .from('appointments')
-        .select('time_slot_start')
+        .select('slot_id, status')
         .eq('doctor_id', doctor.id)
-        .eq('appointment_date', selectedDate)
-        .in('time_slot_start', slotTimestamps.map(t => new Date(t).toISOString()))
+        .eq('date', selectedDate) // DÙNG CỘT date (kiểu date)
+        .in('slot_id', slotIds)
         .neq('status', 'cancelled');
 
       if (bookError) throw bookError;
 
-      const bookedCount = {};
+      console.log('Lịch đã đặt:', booked);
+
+      // 5. TÍNH SỐ LƯỢNG ĐÃ ĐẶT CHO TỪNG slot_id
+      const bookedCountBySlotId = {};
       booked?.forEach(b => {
-        const time = new Date(b.time_slot_start).getTime();
-        bookedCount[time] = (bookedCount[time] || 0) + 1;
+        bookedCountBySlotId[b.slot_id] = (bookedCountBySlotId[b.slot_id] || 0) + 1;
       });
 
-      // 5. LỌC SLOT CÒN TRỐNG
+      console.log('Số lượt đã đặt theo slot_id:', bookedCountBySlotId);
+
+      // 6. CHUYỂN VỀ bookedCount theo timestamp
+      const bookedCount = {};
+      rawSlots.forEach(slot => {
+        const count = bookedCountBySlotId[slot.slot_id] || 0;
+        if (count < slot.max_patients) {
+          bookedCount[slot.timestamp] = count;
+        }
+      });
+
+      // 7. LỌC SLOT CÒN TRỐNG
       const available = rawSlots.filter(slot => {
-        const count = bookedCount[slot.timestamp] || 0;
+        const count = bookedCountBySlotId[slot.slot_id] || 0;
         return count < slot.max_patients;
       });
+
+      console.log('Slot còn trống:', available.length);
+      console.log('Danh sách hiển thị:', available.map(s => s.display));
 
       setTimeSlots(available);
     } catch (err) {
@@ -133,7 +160,8 @@ export default function SelectTimeSlotDoctor() {
   };
 
   const handleSelectSlot = (slot) => {
-    navigation.navigate('ConfirmAppointment', {
+    console.log('Người dùng chọn khung giờ:', slot.display, '| slot_id:', slot.slot_id);
+    navigation.navigate('ConfirmBookingDoctor', {
       doctor,
       selectedDate,
       timeSlot: slot,
@@ -150,18 +178,16 @@ export default function SelectTimeSlotDoctor() {
     });
   };
 
-  const renderSlot = ({ item }) => {
-    return (
-      <TouchableOpacity
-        key={item.timestamp} // KEY DUY NHẤT
-        style={styles.slot}
-        onPress={() => handleSelectSlot(item)}
-      >
-        <Text style={styles.slotText}>{item.display}</Text>
-        <Ionicons name="chevron-forward" size={16} color={Colors.textSecondary} />
-      </TouchableOpacity>
-    );
-  };
+  const renderSlot = ({ item }) => (
+    <TouchableOpacity
+      key={item.timestamp}
+      style={styles.slot}
+      onPress={() => handleSelectSlot(item)}
+    >
+      <Text style={styles.slotText}>{item.display}</Text>
+      <Ionicons name="chevron-forward" size={16} color={Colors.textSecondary} />
+    </TouchableOpacity>
+  );
 
   if (!doctor || !selectedDate) return null;
 
@@ -195,7 +221,7 @@ export default function SelectTimeSlotDoctor() {
       ) : (
         <FlatList
           data={timeSlots}
-          keyExtractor={(item) => item.timestamp.toString()} // KEY DUY NHẤT
+          keyExtractor={(item) => item.timestamp.toString()}
           renderItem={renderSlot}
           contentContainerStyle={styles.list}
         />

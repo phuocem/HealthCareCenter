@@ -109,7 +109,6 @@ export default function BookByDoctor() {
 
       if (error) throw error;
 
-      // BẢO VỆ TUYỆT ĐỐI: data phải là mảng
       if (!Array.isArray(data) || data.length === 0) {
         setDoctors([]);
         setLoading(false);
@@ -119,7 +118,6 @@ export default function BookByDoctor() {
       const grouped = {};
 
       data.forEach(doc => {
-        // BẢO VỆ TỪNG DOC
         if (!doc || typeof doc !== 'object') return;
         if (!doc.id) return;
         if (!doc.user_profiles || !doc.departments) return;
@@ -132,11 +130,12 @@ export default function BookByDoctor() {
             departments: doc.departments,
             specialization: doc.specialization || '',
             room_number: doc.room_number || '',
+            department_id: doc.department_id,           // THÊM
+            department_name: doc.departments.name || 'Chưa có khoa', // THÊM
             schedules: [],
           };
         }
 
-        // XỬ LÝ doctor_schedule_template AN TOÀN
         const raw = doc.doctor_schedule_template;
         const templates = Array.isArray(raw)
           ? raw
@@ -160,10 +159,8 @@ export default function BookByDoctor() {
           const session = start < '12:00' ? 'Sáng' : start < '17:00' ? 'Chiều' : 'Tối';
           const dayText = `${session} ${t.day_of_week}`;
 
-          // Lọc theo thứ
           if (selectedDay && !dayText.includes(selectedDay)) return;
 
-          // Lọc theo buổi
           if (selectedTime) {
             const timeMap = {
               'Sáng (07:00 - 12:00)': 'Sáng',
@@ -181,7 +178,6 @@ export default function BookByDoctor() {
         });
       });
 
-      // Chỉ giữ bác sĩ có lịch
       const result = Object.values(grouped).filter(d => d.schedules.length > 0);
       setDoctors(result);
     } catch (err) {
@@ -248,20 +244,26 @@ export default function BookByDoctor() {
           </View>
         </View>
 
-        {/* ĐÃ SỬA: TRUYỀN doctor ĐẦY ĐỦ */}
+        {/* ĐÃ SỬA: TRUYỀN ĐẦY ĐỦ doctor + department_id */}
         <TouchableOpacity
           style={styles.selectButton}
-          onPress={() =>
-            navigation.navigate('SelectDate', {
-              doctor: {
-                id: item.id,
-                name: profile.full_name || 'Bác sĩ',
-                room_number: item.room_number || '',
-                specialization: item.specialization || '',
-                avatar_url: profile.avatar_url || null,
-              },
-            })
-          }
+          onPress={() => {
+            const doctorData = {
+              id: item.id,
+              name: profile.full_name || 'Bác sĩ',
+              room_number: item.room_number || '',
+              specialization: item.specialization || '',
+              avatar_url: profile.avatar_url || null,
+              department_id: item.department_id,           // THÊM
+              department_name: item.department_name,       // THÊM
+            };
+
+            console.log('========== BOOK BY DOCTOR ==========');
+            console.log('Chuyển sang SelectDate với doctor:', doctorData);
+            console.log('=====================================');
+
+            navigation.navigate('SelectDate', { doctor: doctorData });
+          }}
         >
           <Text style={styles.selectButtonText}>Chọn</Text>
         </TouchableOpacity>
@@ -401,7 +403,7 @@ export default function BookByDoctor() {
             <FlatList
               data={DAYS}
               keyExtractor={(item) => item}
-              RnItem={({ item }) => renderModalItem(
+              renderItem={({ item }) => renderModalItem(
                 item,
                 setSelectedDay,
                 selectedDay
