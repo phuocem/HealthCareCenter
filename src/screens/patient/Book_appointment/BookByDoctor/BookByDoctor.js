@@ -9,6 +9,7 @@ import {
   TextInput,
   ActivityIndicator,
   Image,
+  Modal,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -24,25 +25,63 @@ const Colors = {
   warning: '#F59E0B',
 };
 
+const DAYS = [
+  'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ nhật'
+];
+
+const TIME_SLOTS = [
+  'Sáng (07:00 - 12:00)',
+  'Chiều (13:00 - 17:00)',
+  'Tối (17:00 - 21:00)'
+];
+
 export default function BookByDoctor() {
   const navigation = useNavigation();
   const [query, setQuery] = useState('');
   const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // TÌM KIẾM BÁC SĨ - SỬA LỖI ORDER
-  const searchDoctors = async (text) => {
-    const keyword = text.trim();
-    setQuery(keyword);
+  // FILTER STATES
+  const [selectedDept, setSelectedDept] = useState(null);
+  const [selectedDay, setSelectedDay] = useState(null);
+  const [selectedTime, setSelectedTime] = useState(null);
 
-    if (!keyword) {
+  // MODAL
+  const [deptModal, setDeptModal] = useState(false);
+  const [dayModal, setDayModal] = useState(false);
+  const [timeModal, setTimeModal] = useState(false);
+
+  const [departments, setDepartments] = useState([]);
+
+  // LẤY DANH SÁCH KHOA
+  useEffect(() => {
+    fetchDepartments();
+  }, []);
+
+  const fetchDepartments = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('departments')
+        .select('id, name')
+        .order('name');
+      if (error) throw error;
+      setDepartments([{ id: null, name: 'Tất cả khoa' }, ...data]);
+    } catch (err) {
+      console.error('Lỗi lấy khoa:', err);
+    }
+  };
+
+  // TÌM KIẾM + LỌC
+  const searchDoctors = async () => {
+    const keyword = query.trim();
+    if (!keyword && !selectedDept?.id && !selectedDay && !selectedTime) {
       setDoctors([]);
       return;
     }
 
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      let q = supabase
         .from('doctors')
         .select(`
           id,
@@ -51,57 +90,100 @@ export default function BookByDoctor() {
           experience_years,
           department_id,
           departments!inner(name),
-          user_profiles!inner(
-            full_name,
-            gender,
-            avatar_url
-          ),
-          doctor_schedule_template (
-            day_of_week,
-            start_time,
-            end_time
-          )
-        `)
-        .ilike('user_profiles.full_name', `%${keyword}%`)
-        .order('full_name', { foreignTable: 'user_profiles', ascending: true }); // SỬA: DÙNG foreignTable
+          user_profiles!inner(full_name, gender, avatar_url),
+          doctor_schedule_template (day_of_week, start_time, end_time)
+        `);
+
+      if (keyword) {
+        q = q.ilike('user_profiles.full_name', `%${keyword}%`);
+      }
+
+      if (selectedDept?.id) {
+        q = q.eq('department_id', selectedDept.id);
+      }
+
+      const { data, error } = await q.order('full_name', {
+        foreignTable: 'user_profiles',
+        ascending: true,
+      });
 
       if (error) throw error;
 
-      // GỘP BUỔI KHÁM THEO BÁC SĨ
+      // BẢO VỆ TUYỆT ĐỐI: data phải là mảng
+      if (!Array.isArray(data) || data.length === 0) {
+        setDoctors([]);
+        setLoading(false);
+        return;
+      }
+
       const grouped = {};
+
       data.forEach(doc => {
+        // BẢO VỆ TỪNG DOC
+        if (!doc || typeof doc !== 'object') return;
+        if (!doc.id) return;
+        if (!doc.user_profiles || !doc.departments) return;
+
         const id = doc.id;
         if (!grouped[id]) {
           grouped[id] = {
             id: doc.id,
             user_profiles: doc.user_profiles,
             departments: doc.departments,
-            specialization: doc.specialization,
-            room_number: doc.room_number,
-            experience_years: doc.experience_years,
+            specialization: doc.specialization || '',
+            room_number: doc.room_number || '',
             schedules: [],
           };
         }
 
-        // Xử lý từng lịch (có thể nhiều)
-        const templates = Array.isArray(doc.doctor_schedule_template)
-          ? doc.doctor_schedule_template
-          : [doc.doctor_schedule_template].filter(Boolean);
+        // XỬ LÝ doctor_schedule_template AN TOÀN
+        const raw = doc.doctor_schedule_template;
+        const templates = Array.isArray(raw)
+          ? raw
+          : raw == null
+            ? []
+            : [raw];
 
         templates.forEach(t => {
-          if (t && t.start_time && t.end_time && t.end_time > t.start_time) {
-            const start = t.start_time.slice(0, 5);
-            const session = start < '12:00' ? 'Sáng' : 'Chiều';
-            const dayText = `${session} ${t.day_of_week}`;
+          if (
+            !t ||
+            typeof t !== 'object' ||
+            !t.start_time ||
+            !t.end_time ||
+            !t.day_of_week ||
+            t.end_time <= t.start_time
+          ) {
+            return;
+          }
 
-            if (!grouped[id].schedules.includes(dayText)) {
-              grouped[id].schedules.push(dayText);
-            }
+          const start = t.start_time.slice(0, 5);
+          const session = start < '12:00' ? 'Sáng' : start < '17:00' ? 'Chiều' : 'Tối';
+          const dayText = `${session} ${t.day_of_week}`;
+
+          // Lọc theo thứ
+          if (selectedDay && !dayText.includes(selectedDay)) return;
+
+          // Lọc theo buổi
+          if (selectedTime) {
+            const timeMap = {
+              'Sáng (07:00 - 12:00)': 'Sáng',
+              'Chiều (13:00 - 17:00)': 'Chiều',
+              'Tối (17:00 - 21:00)': 'Tối',
+            };
+            const sessionKey = timeMap[selectedTime];
+            if (!sessionKey || !dayText.includes(sessionKey)) return;
+          }
+
+          const fullSession = `${session} ${t.day_of_week}`;
+          if (!grouped[id].schedules.includes(fullSession)) {
+            grouped[id].schedules.push(fullSession);
           }
         });
       });
 
-      setDoctors(Object.values(grouped));
+      // Chỉ giữ bác sĩ có lịch
+      const result = Object.values(grouped).filter(d => d.schedules.length > 0);
+      setDoctors(result);
     } catch (err) {
       console.error('Lỗi tìm bác sĩ:', err);
       setDoctors([]);
@@ -110,15 +192,18 @@ export default function BookByDoctor() {
     }
   };
 
-  // HIỂN THỊ BÁC SĨ
+  useEffect(() => {
+    searchDoctors();
+  }, [query, selectedDept, selectedDay, selectedTime]);
+
+  // RENDER DOCTOR CARD
   const renderDoctor = ({ item }) => {
-    const profile = item.user_profiles;
-    const dept = item.departments;
+    const profile = item.user_profiles || {};
+    const dept = item.departments || {};
     const hasAvatar = profile.avatar_url;
 
     return (
       <View style={styles.doctorCard}>
-        {/* AVATAR + TÊN */}
         <View style={styles.header}>
           {hasAvatar ? (
             <Image source={{ uri: profile.avatar_url }} style={styles.avatar} />
@@ -139,7 +224,6 @@ export default function BookByDoctor() {
 
         <View style={styles.divider} />
 
-        {/* CHI TIẾT */}
         <View style={styles.details}>
           <View style={styles.row}>
             <Text style={styles.label}>Chuyên khoa</Text>
@@ -157,31 +241,24 @@ export default function BookByDoctor() {
           <View style={styles.row}>
             <Text style={styles.label}>Buổi khám</Text>
             <View style={styles.sessions}>
-              {item.schedules.length > 0 ? (
-                item.schedules.map((s, i) => (
-                  <Text key={i} style={styles.session}>
-                    {s}
-                  </Text>
-                ))
-              ) : (
-                <Text style={styles.noSession}>Chưa có lịch</Text>
-              )}
+              {item.schedules.map((s, i) => (
+                <Text key={i} style={styles.session}>{s}</Text>
+              ))}
             </View>
           </View>
         </View>
 
-        {/* NÚT CHỌN */}
+        {/* ĐÃ SỬA: TRUYỀN doctor ĐẦY ĐỦ */}
         <TouchableOpacity
           style={styles.selectButton}
           onPress={() =>
-            navigation.navigate('SelectTimeSlot', {
-              doctorId: item.id,
+            navigation.navigate('SelectDate', {
               doctor: {
                 id: item.id,
-                name: profile.full_name,
-                room_number: item.room_number,
-                specialization: item.specialization,
-                avatar_url: profile.avatar_url,
+                name: profile.full_name || 'Bác sĩ',
+                room_number: item.room_number || '',
+                specialization: item.specialization || '',
+                avatar_url: profile.avatar_url || null,
               },
             })
           }
@@ -191,6 +268,24 @@ export default function BookByDoctor() {
       </View>
     );
   };
+
+  // RENDER MODAL ITEM
+  const renderModalItem = (item, onPress, selected) => (
+    <TouchableOpacity
+      style={styles.modalItem}
+      onPress={() => {
+        onPress(item);
+        setDeptModal(false);
+        setDayModal(false);
+        setTimeModal(false);
+      }}
+    >
+      <Text style={styles.modalItemText}>{item}</Text>
+      {selected === item && (
+        <Ionicons name="checkmark" size={20} color={Colors.primary} />
+      )}
+    </TouchableOpacity>
+  );
 
   return (
     <View style={styles.container}>
@@ -211,23 +306,31 @@ export default function BookByDoctor() {
         <TextInput
           placeholder="Tìm kiếm bác sĩ..."
           value={query}
-          onChangeText={searchDoctors}
+          onChangeText={setQuery}
           style={styles.searchInput}
         />
       </View>
 
       {/* FILTERS */}
       <View style={styles.filters}>
-        <TouchableOpacity style={styles.filterBtn}>
-          <Text style={styles.filterText}>Chọn chuyên khoa</Text>
+        <TouchableOpacity style={styles.filterBtn} onPress={() => setDeptModal(true)}>
+          <Text style={styles.filterText}>
+            {selectedDept?.name || 'Chọn chuyên khoa'}
+          </Text>
           <Ionicons name="chevron-down" size={16} color="#6B7280" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.filterBtn}>
-          <Text style={styles.filterText}>Chọn thứ</Text>
+
+        <TouchableOpacity style={styles.filterBtn} onPress={() => setDayModal(true)}>
+          <Text style={styles.filterText}>
+            {selectedDay || 'Chọn thứ'}
+          </Text>
           <Ionicons name="chevron-down" size={16} color="#6B7280" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.filterBtn}>
-          <Text style={styles.filterText}>Chọn giờ</Text>
+
+        <TouchableOpacity style={styles.filterBtn} onPress={() => setTimeModal(true)}>
+          <Text style={styles.filterText}>
+            {selectedTime || 'Chọn giờ'}
+          </Text>
           <Ionicons name="chevron-down" size={16} color="#6B7280" />
         </TouchableOpacity>
       </View>
@@ -246,20 +349,90 @@ export default function BookByDoctor() {
       ) : (
         <FlatList
           data={doctors}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => item.id.toString()}
           renderItem={renderDoctor}
           contentContainerStyle={styles.list}
-          showsVerticalScrollIndicator={false}
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons name="search-outline" size={48} color="#9CA3AF" />
               <Text style={styles.emptyText}>
-                {query ? 'Không tìm thấy bác sĩ nào.' : 'Nhập tên để tìm kiếm.'}
+                {query || selectedDept || selectedDay || selectedTime
+                  ? 'Không tìm thấy bác sĩ nào.'
+                  : 'Nhập tên hoặc chọn lọc.'}
               </Text>
             </View>
           }
         />
       )}
+
+      {/* MODAL CHỌN KHOA */}
+      <Modal visible={deptModal} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Chọn chuyên khoa</Text>
+              <TouchableOpacity onPress={() => setDeptModal(false)}>
+                <Ionicons name="close" size={24} color="#000" />
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={departments}
+              keyExtractor={(item) => item.id?.toString() || 'all'}
+              renderItem={({ item }) => renderModalItem(
+                item.name,
+                setSelectedDept,
+                selectedDept?.name
+              )}
+            />
+          </View>
+        </View>
+      </Modal>
+
+      {/* MODAL CHỌN THỨ */}
+      <Modal visible={dayModal} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Chọn thứ</Text>
+              <TouchableOpacity onPress={() => setDayModal(false)}>
+                <Ionicons name="close" size={24} color="#000" />
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={DAYS}
+              keyExtractor={(item) => item}
+              RnItem={({ item }) => renderModalItem(
+                item,
+                setSelectedDay,
+                selectedDay
+              )}
+            />
+          </View>
+        </View>
+      </Modal>
+
+      {/* MODAL CHỌN GIỜ */}
+      <Modal visible={timeModal} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Chọn buổi</Text>
+              <TouchableOpacity onPress={() => setTimeModal(false)}>
+                <Ionicons name="close" size={24} color="#000" />
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={TIME_SLOTS}
+              keyExtractor={(item) => item}
+              renderItem={({ item }) => renderModalItem(
+                item,
+                setSelectedTime,
+                selectedTime
+              )}
+            />
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -352,7 +525,6 @@ const styles = StyleSheet.create({
   infoIcon: { padding: 4 },
   sessions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, flex: 1, justifyContent: 'flex-end' },
   session: { fontSize: 14, color: '#16A34A', backgroundColor: '#F0FDF4', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
-  noSession: { fontSize: 14, color: '#9CA3AF', fontStyle: 'italic' },
   selectButton: {
     marginTop: 16,
     backgroundColor: Colors.primary,
@@ -364,4 +536,35 @@ const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   empty: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 60 },
   emptyText: { marginTop: 16, fontSize: 16, color: '#6B7280', textAlign: 'center' },
+
+  // MODAL
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '80%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  modalTitle: { fontSize: 18, fontWeight: '700', color: Colors.textPrimary },
+  modalItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  modalItemText: { fontSize: 16, color: Colors.textPrimary },
 });
