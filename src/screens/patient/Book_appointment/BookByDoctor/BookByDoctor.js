@@ -1,4 +1,3 @@
-// src/screens/patient/Book_appointment/BookByDoctor/BookByDoctor.js
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -42,7 +41,7 @@ export default function BookByDoctor() {
   const [loading, setLoading] = useState(false);
 
   // FILTER STATES
-  const [selectedDept, setSelectedDept] = useState(null);
+  const [selectedDept, setSelectedDept] = useState(null); // { id, name }
   const [selectedDay, setSelectedDay] = useState(null);
   const [selectedTime, setSelectedTime] = useState(null);
 
@@ -99,7 +98,7 @@ export default function BookByDoctor() {
       }
 
       if (selectedDept?.id) {
-        q = q.eq('department_id', selectedDept.id);
+        q = q.eq('department_id', selectedDept.id); // DÙNG .id
       }
 
       const { data, error } = await q.order('full_name', {
@@ -130,8 +129,8 @@ export default function BookByDoctor() {
             departments: doc.departments,
             specialization: doc.specialization || '',
             room_number: doc.room_number || '',
-            department_id: doc.department_id,           // THÊM
-            department_name: doc.departments.name || 'Chưa có khoa', // THÊM
+            department_id: doc.department_id,
+            department_name: doc.departments.name || 'Chưa có khoa',
             schedules: [],
           };
         }
@@ -188,8 +187,13 @@ export default function BookByDoctor() {
     }
   };
 
+  // GỌI LẠI TÌM KIẾM KHI CÓ THAY ĐỔI FILTER – ĐÃ SỬA
   useEffect(() => {
-    searchDoctors();
+    const timeout = setTimeout(() => {
+      searchDoctors();
+    }, 300); // Debounce để tránh gọi liên tục
+
+    return () => clearTimeout(timeout);
   }, [query, selectedDept, selectedDay, selectedTime]);
 
   // RENDER DOCTOR CARD
@@ -244,7 +248,6 @@ export default function BookByDoctor() {
           </View>
         </View>
 
-        {/* ĐÃ SỬA: TRUYỀN ĐẦY ĐỦ doctor + department_id */}
         <TouchableOpacity
           style={styles.selectButton}
           onPress={() => {
@@ -254,8 +257,8 @@ export default function BookByDoctor() {
               room_number: item.room_number || '',
               specialization: item.specialization || '',
               avatar_url: profile.avatar_url || null,
-              department_id: item.department_id,           // THÊM
-              department_name: item.department_name,       // THÊM
+              department_id: item.department_id,
+              department_name: item.department_name,
             };
 
             console.log('========== BOOK BY DOCTOR ==========');
@@ -270,24 +273,6 @@ export default function BookByDoctor() {
       </View>
     );
   };
-
-  // RENDER MODAL ITEM
-  const renderModalItem = (item, onPress, selected) => (
-    <TouchableOpacity
-      style={styles.modalItem}
-      onPress={() => {
-        onPress(item);
-        setDeptModal(false);
-        setDayModal(false);
-        setTimeModal(false);
-      }}
-    >
-      <Text style={styles.modalItemText}>{item}</Text>
-      {selected === item && (
-        <Ionicons name="checkmark" size={20} color={Colors.primary} />
-      )}
-    </TouchableOpacity>
-  );
 
   return (
     <View style={styles.container}>
@@ -367,7 +352,7 @@ export default function BookByDoctor() {
         />
       )}
 
-      {/* MODAL CHỌN KHOA */}
+      {/* MODAL CHỌN KHOA – ĐÃ SỬA */}
       <Modal visible={deptModal} transparent animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
@@ -380,10 +365,19 @@ export default function BookByDoctor() {
             <FlatList
               data={departments}
               keyExtractor={(item) => item.id?.toString() || 'all'}
-              renderItem={({ item }) => renderModalItem(
-                item.name,
-                setSelectedDept,
-                selectedDept?.name
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={styles.modalItem}
+                  onPress={() => {
+                    setSelectedDept(item); // TRUYỀN OBJECT { id, name }
+                    setDeptModal(false);
+                  }}
+                >
+                  <Text style={styles.modalItemText}>{item.name}</Text>
+                  {selectedDept?.id === item.id && (
+                    <Ionicons name="checkmark" size={20} color={Colors.primary} />
+                  )}
+                </TouchableOpacity>
               )}
             />
           </View>
@@ -403,10 +397,19 @@ export default function BookByDoctor() {
             <FlatList
               data={DAYS}
               keyExtractor={(item) => item}
-              renderItem={({ item }) => renderModalItem(
-                item,
-                setSelectedDay,
-                selectedDay
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={styles.modalItem}
+                  onPress={() => {
+                    setSelectedDay(item);
+                    setDayModal(false);
+                  }}
+                >
+                  <Text style={styles.modalItemText}>{item}</Text>
+                  {selectedDay === item && (
+                    <Ionicons name="checkmark" size={20} color={Colors.primary} />
+                  )}
+                </TouchableOpacity>
               )}
             />
           </View>
@@ -426,10 +429,19 @@ export default function BookByDoctor() {
             <FlatList
               data={TIME_SLOTS}
               keyExtractor={(item) => item}
-              renderItem={({ item }) => renderModalItem(
-                item,
-                setSelectedTime,
-                selectedTime
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={styles.modalItem}
+                  onPress={() => {
+                    setSelectedTime(item);
+                    setTimeModal(false);
+                  }}
+                >
+                  <Text style={styles.modalItemText}>{item}</Text>
+                  {selectedTime === item && (
+                    <Ionicons name="checkmark" size={20} color={Colors.primary} />
+                  )}
+                </TouchableOpacity>
               )}
             />
           </View>
@@ -439,7 +451,7 @@ export default function BookByDoctor() {
   );
 }
 
-// === STYLES ===
+// === STYLES (giữ nguyên) ===
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F9FAFB' },
   headerBar: {
@@ -538,8 +550,6 @@ const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   empty: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 60 },
   emptyText: { marginTop: 16, fontSize: 16, color: '#6B7280', textAlign: 'center' },
-
-  // MODAL
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',

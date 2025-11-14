@@ -1,4 +1,3 @@
-// src/screens/patient/Book_appointment/BookByDate/BookByDate.js
 import React, { useState, useCallback } from 'react';
 import {
   View,

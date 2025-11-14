@@ -249,12 +249,7 @@ export default function ProfileScreen() {
                   value={formatDate(profile.date_of_birth)}
                   delay={400}
                 />
-                <InfoItem
-                  icon="shield-account"
-                  label="Vai trò"
-                  value={formatRole(profile.role)}
-                  delay={500}
-                />
+                
               </View>
 
               {/* NÚT CHỈNH SỬA */}
