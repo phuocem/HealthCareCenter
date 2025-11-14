@@ -3,52 +3,82 @@ import { StyleSheet } from 'react-native';
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f9f9f9',
-    padding: 16,
+    backgroundColor: '#F5F5F5', // Nền sáng nhẹ
+    paddingTop: 20,
   },
   title: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 16,
+    color: '#1E293B', // Màu chữ đậm
     textAlign: 'center',
+    marginBottom: 20,
   },
   card: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
     padding: 16,
+    marginHorizontal: 16,
     marginBottom: 12,
     shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 3,
+    shadowRadius: 4,
+    elevation: 3, // Shadow cho Android
   },
   name: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '600',
+    color: '#1E293B',
+    marginBottom: 4,
   },
   service: {
-    fontSize: 15,
-    color: '#444',
-    marginTop: 6,
+    fontSize: 16,
+    color: '#64748B', // Màu chữ phụ
+    marginBottom: 4,
   },
   time: {
-    fontSize: 15,
-    color: '#555',
-    marginTop: 6,
+    fontSize: 14,
+    color: '#94A3B8',
+    marginBottom: 4,
   },
   symptoms: {
     fontSize: 14,
-    color: '#666',
-    marginTop: 6,
+    color: '#EF4444', // Màu đỏ nhẹ cho triệu chứng
+    marginBottom: 8,
   },
   status: {
-    fontSize: 15,
+    fontSize: 14,
+    fontWeight: '500',
+    marginBottom: 8,
+  },
+  confirmButton: {
+    backgroundColor: '#2ecc71', // Xanh lá
+    padding: 8,
+    borderRadius: 8,
     marginTop: 8,
+    alignItems: 'center',
+  },
+  confirmButtonText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  cancelButton: {
+    backgroundColor: '#e74c3c', // Đỏ
+    padding: 8,
+    borderRadius: 8,
+    marginTop: 8,
+    alignItems: 'center',
+  },
+  cancelButtonText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+    fontSize: 14,
   },
   emptyText: {
-    textAlign: 'center',
     fontSize: 16,
-    marginTop: 40,
-    color: '#666',
+    color: '#64748B',
+    textAlign: 'center',
+    marginTop: 20,
   },
 });
