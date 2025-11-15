@@ -1,27 +1,14 @@
 import React, { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  ActivityIndicator,
-  TouchableOpacity,
-  Alert,
-  ImageBackground,
-  Platform,
-  ScrollView,
-} from "react-native";
+import { View, Text, ActivityIndicator,TouchableOpacity,Alert,ImageBackground,Platform, ScrollView,} from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons, Ionicons } from "@expo/vector-icons";
 import Animated, { FadeInUp, FadeInDown, ZoomIn } from "react-native-reanimated";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
-
 import { supabase } from "../../api/supabase";
 import { getUserProfile } from "../../controllers/patient/userController";
 import { useUserStore } from "../../store/useUserStore";
-
 import { formatDate, formatGender, formatRole } from "../../utils/formatters";
-
 import styles, { Colors } from "../../styles/patient/profileStyles";
-
 const getInitials = (name) => {
   if (!name) return "?";
   return name
@@ -121,11 +108,7 @@ export default function ProfileScreen() {
   }
 
   return (
-    <ImageBackground
-      source={require("../../../assets/images/profile bg-pattern.png")}
-      style={styles.background}
-      blurRadius={8}
-    >
+    
       <LinearGradient
         colors={[Colors.primary + "CC", Colors.secondary + "B3"]}
         style={styles.overlay}
@@ -235,8 +218,7 @@ export default function ProfileScreen() {
           </Animated.View>
         </ScrollView>
       </LinearGradient>
-    </ImageBackground>
-  );
+        );
 }
 
 // === INFO ITEM ===
