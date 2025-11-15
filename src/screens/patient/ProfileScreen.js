@@ -177,12 +177,7 @@ export default function ProfileScreen() {
             {profile.name}
           </Animated.Text>
 
-          <Animated.Text
-            entering={FadeInUp.delay(400).duration(600)}
-            style={styles.role}
-          >
-            {formatRole(profile.role)}
-          </Animated.Text>
+          
         </Animated.View>
 
         {/* THÔNG TIN CÁ NHÂN */}

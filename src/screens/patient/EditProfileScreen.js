@@ -285,7 +285,6 @@ formData.append("file", {
             <Text style={styles.userName}>
               {formData.fullName || "Người dùng"}
             </Text>
-            <Text style={styles.userRole}>Bệnh nhân</Text>
           </View>
 
           {/* Form Card */}
