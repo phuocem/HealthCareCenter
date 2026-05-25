@@ -53,3 +53,4 @@ ios/Flutter/Generated.xcconfig
 ios/Flutter/flutter_export_environment.sh
 pubspec.lock
 seed_data_massive.sql
+seed_inventory_data.sql
