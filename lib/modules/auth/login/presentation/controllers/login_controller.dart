@@ -43,10 +43,30 @@ class LoginController extends GetxController {
 
   void _redirectUser(String role) {
     switch (role) {
-      case 'admin': Get.offAllNamed(Routes.ADMIN_HOME); break;
-      case 'doctor': Get.offAllNamed(Routes.DOCTOR_HOME); break;
-      case 'patient': Get.offAllNamed(Routes.PATIENT_HOME); break;
-      default: Get.offAllNamed(Routes.LOGIN);
+      case 'admin':
+        Get.offAllNamed(Routes.ADMIN_HOME);
+        break;
+      case 'doctor':
+        Get.offAllNamed(Routes.DOCTOR_HOME);
+        break;
+      case 'patient':
+        Get.offAllNamed(Routes.PATIENT_HOME);
+        break;
+      case 'receptionist':
+        Get.offAllNamed(Routes.RECEPTION_HOME);
+        break;
+      case 'cashier':
+        Get.offAllNamed(Routes.CASHIER_HOME);
+        break;
+      case 'lab_staff':
+        Get.offAllNamed(Routes.LAB_HOME);
+        break;
+      case 'pharmacist':
+        Get.offAllNamed(Routes.PHARMACY_HOME);
+        break;
+      default:
+        Get.snackbar('Lỗi', 'Role không được nhận dạng: $role');
+        Get.offAllNamed(Routes.LOGIN);
     }
   }
 }

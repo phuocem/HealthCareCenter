@@ -26,12 +26,30 @@ void main() async {
           .single();
           
       final role = profile['role'];
-      if (role == 'admin') {
-        initialRoute = Routes.ADMIN_HOME;
-      } else if (role == 'doctor') {
-        initialRoute = Routes.DOCTOR_HOME;
-      } else {
-        initialRoute = Routes.PATIENT_HOME;
+      switch (role) {
+        case 'admin':
+          initialRoute = Routes.ADMIN_HOME;
+          break;
+        case 'doctor':
+          initialRoute = Routes.DOCTOR_HOME;
+          break;
+        case 'patient':
+          initialRoute = Routes.PATIENT_HOME;
+          break;
+        case 'receptionist':
+          initialRoute = Routes.RECEPTION_HOME;
+          break;
+        case 'cashier':
+          initialRoute = Routes.CASHIER_HOME;
+          break;
+        case 'lab_staff':
+          initialRoute = Routes.LAB_HOME;
+          break;
+        case 'pharmacist':
+          initialRoute = Routes.PHARMACY_HOME;
+          break;
+        default:
+          initialRoute = AppPages.INITIAL;
       }
     } catch (e) {
       initialRoute = AppPages.INITIAL;

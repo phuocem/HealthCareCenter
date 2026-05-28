@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../data/repositories/user_management_repository.dart';
 
@@ -47,6 +48,14 @@ class UserManagementController extends GetxController {
     required int experienceYears,
     required List<int> workingDays,
     required List<Map<String, String>> slots,
+    String? phone,
+    String? qualification,
+    String? school,
+    String? specialization,
+    String? certificates,
+    String? clinicalFocus,
+    String? emergencyRelativeName,
+    String? emergencyRelativePhone,
   }) async {
     try {
       isLoading.value = true;
@@ -55,6 +64,7 @@ class UserManagementController extends GetxController {
         'profile': {
           'full_name': fullName,
           'email': email,
+          'phone': phone,
           'role': 'doctor',
         },
         'doctor': {
@@ -62,6 +72,14 @@ class UserManagementController extends GetxController {
           'license_number': licenseNumber,
           'consultation_fee': consultationFee,
           'experience_years': experienceYears,
+          'qualification': qualification,
+          'school': school,
+          'specialization': specialization,
+          'certificates': certificates,
+          'clinical_focus': clinicalFocus,
+          'emergency_relative_name': emergencyRelativeName,
+          'emergency_relative_phone': emergencyRelativePhone,
+          'personal_phone': phone,
         }
       };
 
@@ -136,6 +154,48 @@ class UserManagementController extends GetxController {
     try {
       await _repository.deleteSchedule(id);
       await loadSchedules(doctorId);
+    } catch (e) {
+      Get.snackbar('Lỗi', 'Không thể xóa: $e');
+    }
+  }
+
+  Future<void> addStaff({
+    required String email,
+    required String password,
+    required String fullName,
+    required String role,
+    String? phone,
+  }) async {
+    try {
+      isLoading.value = true;
+      await _repository.createStaff(
+        email: email,
+        password: password,
+        fullName: fullName,
+        role: role,
+        phone: phone,
+      );
+      await loadData();
+      Get.back(); // đóng bottom sheet
+      Get.snackbar(
+        'Thành công ✓',
+        'Đã tạo tài khoản cho $fullName ($role)',
+        backgroundColor: const Color(0xFF34D399),
+        colorText: const Color(0xFF0F172A),
+        duration: const Duration(seconds: 3),
+      );
+    } catch (e) {
+      Get.snackbar('Lỗi', 'Không thể tạo tài khoản: $e');
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> deleteStaff(String id, String name) async {
+    try {
+      await _repository.deleteStaff(id);
+      await loadData();
+      Get.snackbar('Đã xóa', 'Đã xóa tài khoản $name');
     } catch (e) {
       Get.snackbar('Lỗi', 'Không thể xóa: $e');
     }

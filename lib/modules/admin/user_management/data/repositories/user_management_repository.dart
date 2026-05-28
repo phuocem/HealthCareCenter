@@ -34,4 +34,24 @@ class UserManagementRepository {
   Future<void> deleteSchedule(String id) async {
     await _provider.deleteSchedule(id);
   }
+
+  Future<String> createStaff({
+    required String email,
+    required String password,
+    required String fullName,
+    required String role,
+    String? phone,
+  }) async {
+    return await _provider.createStaffProfile(
+      email: email,
+      password: password,
+      fullName: fullName,
+      role: role,
+      phone: phone,
+    );
+  }
+
+  Future<void> deleteStaff(String id) async {
+    await _provider.deleteStaffProfile(id);
+  }
 }

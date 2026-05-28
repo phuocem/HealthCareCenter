@@ -13,16 +13,31 @@ class AddDoctorView extends GetView<UserManagementController> {
   final passwordController = TextEditingController();
   final licenseController = TextEditingController();
   final experienceController = TextEditingController();
+  final phoneController = TextEditingController();
+  final qualificationController = TextEditingController();
+  final schoolController = TextEditingController();
+  final specializationController = TextEditingController();
+  final certificatesController = TextEditingController();
+  final focusController = TextEditingController();
+  final emergencyNameController = TextEditingController();
+  final emergencyPhoneController = TextEditingController();
   
   final RxString selectedDept = ''.obs;
   final RxMap<String, dynamic> selectedService = <String, dynamic>{}.obs;
 
-  
   final emailFocusNode = FocusNode();
   final passwordFocusNode = FocusNode();
   final nameFocusNode = FocusNode();
   final licenseFocusNode = FocusNode();
   final experienceFocusNode = FocusNode();
+  final phoneFocusNode = FocusNode();
+  final qualificationFocusNode = FocusNode();
+  final schoolFocusNode = FocusNode();
+  final specializationFocusNode = FocusNode();
+  final certificatesFocusNode = FocusNode();
+  final focusFocusNode = FocusNode();
+  final emergencyNameFocusNode = FocusNode();
+  final emergencyPhoneFocusNode = FocusNode();
 
   @override
   Widget build(BuildContext context) {
@@ -69,11 +84,29 @@ class AddDoctorView extends GetView<UserManagementController> {
               ]),
               const SizedBox(height: 24),
               
-              _buildSectionTitle('THÔNG TIN CÁ NHÂN'),
+              _buildSectionTitle('THÔNG TIN CÁ NHÂN & LIÊN HỆ'),
               _buildCard([
                 _buildTextField(nameController, 'Họ và tên bác sĩ', Icons.person_outline_rounded, focusNode: nameFocusNode),
-                _buildTextField(licenseController, 'Số chứng chỉ hành nghề', Icons.badge_outlined, focusNode: licenseFocusNode),
-                _buildTextField(experienceController, 'Số năm kinh nghiệm', Icons.work_history_outlined, isNumber: true, focusNode: experienceFocusNode),
+                _buildTextField(phoneController, 'Số điện thoại di động cá nhân', Icons.phone_iphone_rounded, isNumber: true, focusNode: phoneFocusNode),
+                _buildTextField(licenseController, 'Số chứng chỉ hành nghề (CCHN)', Icons.badge_outlined, focusNode: licenseFocusNode),
+                _buildTextField(experienceController, 'Số năm kinh nghiệm lâm sàng', Icons.work_history_outlined, isNumber: true, focusNode: experienceFocusNode),
+              ]),
+              const SizedBox(height: 24),
+
+              _buildSectionTitle('THÔNG TIN CHUYÊN MÔN CAO CẤP'),
+              _buildCard([
+                _buildTextField(qualificationController, 'Học vị / Học hàm (ví dụ: Thạc sĩ, Bác sĩ CKI)', Icons.school_outlined, focusNode: qualificationFocusNode),
+                _buildTextField(schoolController, 'Nơi đào tạo chuyên sâu (ví dụ: Đại học Y Dược TP.HCM)', Icons.business_rounded, focusNode: schoolFocusNode),
+                _buildTextField(specializationController, 'Chuyên khoa sâu (ví dụ: Tim mạch can thiệp)', Icons.health_and_safety_outlined, focusNode: specializationFocusNode),
+                _buildTextField(focusController, 'Chuyên môn lâm sàng sâu (ví dụ: Siêu âm Doppler, đặt stent)', Icons.auto_awesome_rounded, focusNode: focusFocusNode),
+                _buildTextField(certificatesController, 'Chứng chỉ CME đào tạo liên tục', Icons.workspace_premium_outlined, focusNode: certificatesFocusNode),
+              ]),
+              const SizedBox(height: 24),
+
+              _buildSectionTitle('LIÊN HỆ KHẨN CẤP (NGƯỜI THÂN BÁC SĨ)'),
+              _buildCard([
+                _buildTextField(emergencyNameController, 'Họ tên người thân khẩn cấp', Icons.family_restroom_rounded, focusNode: emergencyNameFocusNode),
+                _buildTextField(emergencyPhoneController, 'Số điện thoại người thân', Icons.contact_phone_rounded, isNumber: true, focusNode: emergencyPhoneFocusNode),
               ]),
               const SizedBox(height: 24),
               
@@ -363,6 +396,14 @@ class AddDoctorView extends GetView<UserManagementController> {
     final name = nameController.text.trim();
     final license = licenseController.text.trim();
     final expText = experienceController.text.trim();
+    final phone = phoneController.text.trim();
+    final qualification = qualificationController.text.trim();
+    final school = schoolController.text.trim();
+    final specialization = specializationController.text.trim();
+    final certificates = certificatesController.text.trim();
+    final focus = focusController.text.trim();
+    final emergencyName = emergencyNameController.text.trim();
+    final emergencyPhone = emergencyPhoneController.text.trim();
 
     if (email.isEmpty) {
       Get.snackbar('Lỗi nhập liệu', 'Vui lòng nhập Email đăng nhập của bác sĩ.', backgroundColor: Colors.orange, colorText: Colors.white);
@@ -387,6 +428,11 @@ class AddDoctorView extends GetView<UserManagementController> {
     if (name.isEmpty) {
       Get.snackbar('Lỗi nhập liệu', 'Vui lòng nhập Họ và tên bác sĩ.', backgroundColor: Colors.orange, colorText: Colors.white);
       nameFocusNode.requestFocus();
+      return;
+    }
+    if (phone.isEmpty) {
+      Get.snackbar('Lỗi nhập liệu', 'Vui lòng nhập Số điện thoại cá nhân.', backgroundColor: Colors.orange, colorText: Colors.white);
+      phoneFocusNode.requestFocus();
       return;
     }
     if (license.isEmpty) {
@@ -414,7 +460,6 @@ class AddDoctorView extends GetView<UserManagementController> {
       return;
     }
 
-    
     Get.toNamed(
       Routes.ADD_DOCTOR_SCHEDULE,
       arguments: {
@@ -425,6 +470,14 @@ class AddDoctorView extends GetView<UserManagementController> {
         'experienceYears': expYears,
         'departmentId': selectedDept.value,
         'consultationFee': (selectedService['base_price'] as num).toDouble(),
+        'phone': phone,
+        'qualification': qualification.isNotEmpty ? qualification : 'Bác sĩ',
+        'school': school.isNotEmpty ? school : 'Đại học Y Dược',
+        'specialization': specialization.isNotEmpty ? specialization : 'Nội tổng quát',
+        'certificates': certificates.isNotEmpty ? certificates : 'Chứng chỉ hành nghề BYT',
+        'clinicalFocus': focus.isNotEmpty ? focus : 'Khám bệnh đa khoa',
+        'emergencyRelativeName': emergencyName.isNotEmpty ? emergencyName : 'Liên hệ phòng khám',
+        'emergencyRelativePhone': emergencyPhone.isNotEmpty ? emergencyPhone : '1900 1000',
       },
     );
   }

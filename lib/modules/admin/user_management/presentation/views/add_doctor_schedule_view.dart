@@ -654,6 +654,14 @@ class AddDoctorScheduleView extends GetView<UserManagementController> {
       experienceYears: doctorData['experienceYears'] ?? 0,
       workingDays: selectedDays.toList(),
       slots: generatedSlots.toList(),
+      phone: doctorData['phone'],
+      qualification: doctorData['qualification'],
+      school: doctorData['school'],
+      specialization: doctorData['specialization'],
+      certificates: doctorData['certificates'],
+      clinicalFocus: doctorData['clinicalFocus'],
+      emergencyRelativeName: doctorData['emergencyRelativeName'],
+      emergencyRelativePhone: doctorData['emergencyRelativePhone'],
     );
   }
 }

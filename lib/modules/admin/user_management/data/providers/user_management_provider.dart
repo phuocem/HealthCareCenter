@@ -84,4 +84,49 @@ class UserManagementProvider {
   Future<void> deleteSchedule(String id) async {
     await _supabase.from('doctor_schedules').delete().eq('id', id);
   }
+
+  /// Tạo tài khoản nhân viên (receptionist, cashier, lab_staff, pharmacist)
+  Future<String> createStaffProfile({
+    required String email,
+    required String password,
+    required String fullName,
+    required String role,
+    String? phone,
+  }) async {
+    // Tạo auth user bằng client phụ để không đăng xuất admin
+    final tempClient = SupabaseClient(
+      dotenv.get('SUPABASE_URL'),
+      dotenv.get('SUPABASE_ANON_KEY'),
+      authOptions: const AuthClientOptions(
+        authFlowType: AuthFlowType.implicit,
+      ),
+    );
+
+    final response = await tempClient.auth.signUp(
+      email: email,
+      password: password,
+      data: {'full_name': fullName},
+    );
+
+    final newUserId = response.user?.id;
+    if (newUserId == null) {
+      throw Exception('Không thể tạo tài khoản trong hệ thống Auth.');
+    }
+
+    // Ghi user_profiles
+    await _supabase.from('user_profiles').upsert({
+      'id': newUserId,
+      'full_name': fullName,
+      'email': email,
+      'role': role,
+      if (phone != null && phone.isNotEmpty) 'phone': phone,
+    });
+
+    return newUserId;
+  }
+
+  /// Xóa nhân viên (chỉ xóa profile, không xóa auth user)
+  Future<void> deleteStaffProfile(String id) async {
+    await _supabase.from('user_profiles').delete().eq('id', id);
+  }
 }

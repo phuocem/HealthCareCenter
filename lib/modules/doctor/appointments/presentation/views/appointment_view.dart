@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/appointment_controller.dart';
 import '../../../../../core/theme/app_colors.dart';
+import '../../../../../core/routes/app_routes.dart';
 
 class AppointmentView extends GetView<AppointmentController> {
   const AppointmentView({super.key});
@@ -196,73 +197,85 @@ class AppointmentView extends GetView<AppointmentController> {
   }
 
   Widget _buildDoctorBanner() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.adminSurface,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.adminCardBorder, width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF0D9488).withValues(alpha: 0.03),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: const Color(0xFF0D9488).withValues(alpha: 0.08),
-              shape: BoxShape.circle,
-              border: Border.all(color: const Color(0xFF0D9488).withValues(alpha: 0.15)),
+    return GestureDetector(
+      onTap: () => _showDoctorProfileDialog(),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: AppColors.adminSurface,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: AppColors.adminCardBorder, width: 1.5),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF0D9488).withValues(alpha: 0.03),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
             ),
-            child: const Icon(Icons.medical_services_rounded, color: Color(0xFF0D9488), size: 28),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'Bác sĩ. ${controller.doctorName.value}',
-                        style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: -0.3),
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF34D399),
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(color: Color(0xFF34D399), blurRadius: 6, spreadRadius: 1),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  controller.doctorSpecialty.value.toUpperCase(),
-                  style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 0.8),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  controller.doctorEmail.value,
-                  style: const TextStyle(color: Color(0xFF64748B), fontSize: 11, fontWeight: FontWeight.w500),
-                ),
-              ],
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0D9488).withValues(alpha: 0.08),
+                shape: BoxShape.circle,
+                border: Border.all(color: const Color(0xFF0D9488).withValues(alpha: 0.15)),
+              ),
+              child: const Icon(Icons.medical_services_rounded, color: Color(0xFF0D9488), size: 28),
             ),
-          ),
-        ],
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Bác sĩ. ${controller.doctorName.value}',
+                          style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: -0.3),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF34D399),
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(color: Color(0xFF34D399), blurRadius: 6, spreadRadius: 1),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    controller.doctorSpecialty.value.toUpperCase(),
+                    style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 0.8),
+                  ),
+                  const SizedBox(height: 2),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        controller.doctorEmail.value,
+                        style: const TextStyle(color: Color(0xFF64748B), fontSize: 11, fontWeight: FontWeight.w500),
+                      ),
+                      const Text(
+                        'Xem hồ sơ ➜',
+                        style: TextStyle(color: Color(0xFF0D9488), fontSize: 10, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -535,7 +548,29 @@ class AppointmentView extends GetView<AppointmentController> {
               children: [
                 _buildActionBtn(Icons.phone_rounded, 'GỌI ĐIỆN', const Color(0xFF38BDF8), () {}),
                 _buildActionBtn(Icons.edit_note_rounded, 'GHI CHÚ', const Color(0xFFD97706), () {}),
-                _buildActionBtn(Icons.check_circle_rounded, 'HOÀN TẤT', const Color(0xFF0D9488), () {}),
+                if (status == 'checked_in')
+                  Expanded(
+                    flex: 2,
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 6),
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF34D399),
+                          foregroundColor: const Color(0xFF070B19),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          elevation: 0,
+                        ),
+                        icon: const Icon(Icons.play_arrow_rounded, size: 16),
+                        label: const Text('BẮT ĐẦU KHÁM', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
+                        onPressed: () => Get.toNamed(Routes.DOCTOR_EXAMINE, arguments: {'appointmentId': app['id']}),
+                      ),
+                    ),
+                  )
+                else
+                  _buildActionBtn(Icons.check_circle_rounded, 'HOÀN TẤT', const Color(0xFF0D9488), () {
+                    controller.updateAppointmentStatus(app['id'], 'completed');
+                  }),
               ],
             ),
           ),
@@ -548,11 +583,20 @@ class AppointmentView extends GetView<AppointmentController> {
     Color color = const Color(0xFF38BDF8);
     String label = 'Đang chờ';
     
-    if (status == 'completed') {
-      color = AppColors.success;
+    if (status == 'pending') {
+      color = const Color(0xFFFBBF24);
+      label = 'Chờ xác nhận';
+    } else if (status == 'confirmed') {
+      color = const Color(0xFF38BDF8);
+      label = 'Đã xác nhận';
+    } else if (status == 'checked_in') {
+      color = const Color(0xFF34D399);
+      label = 'Đã Check-in';
+    } else if (status == 'completed') {
+      color = const Color(0xFF10B981);
       label = 'Đã xong';
     } else if (status == 'cancelled') {
-      color = AppColors.error;
+      color = const Color(0xFFEF4444);
       label = 'Đã hủy';
     }
 
@@ -600,6 +644,139 @@ class AppointmentView extends GetView<AppointmentController> {
           padding: const EdgeInsets.symmetric(vertical: 12),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
+      ),
+    );
+  }
+
+  void _showDoctorProfileDialog() {
+    final name = controller.doctorName.value;
+    final spec = controller.doctorSpecialty.value;
+    final email = controller.doctorEmail.value.isEmpty ? 'dr.hoangnam@healthx.com' : controller.doctorEmail.value;
+
+    Get.dialog(
+      AlertDialog(
+        backgroundColor: const Color(0xFF0F1626),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(28),
+          side: const BorderSide(color: Color(0xFF0D9488), width: 1.5),
+        ),
+        content: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0D9488).withOpacity(0.08),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.badge_rounded, color: Color(0xFF0D9488), size: 24),
+                  ),
+                  const SizedBox(width: 14),
+                  const Text(
+                    'HỒ SƠ BÁC SĨ CHI TIẾT',
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 14, letterSpacing: 0.5),
+                  ),
+                ],
+              ),
+              const Divider(color: Color(0xFF1E293B), height: 28, thickness: 1.5),
+              
+              _buildDialogSectionHeader('THÔNG TIN HÀNH NGHỀ & CHUYÊN MÔN'),
+              const SizedBox(height: 8),
+              _buildDialogRow(Icons.account_box_rounded, 'HỌ VÀ TÊN', 'Bác sĩ. $name', const Color(0xFF38BDF8)),
+              _buildDialogRow(Icons.school_rounded, 'HỌC VỊ / HỌC HÀM', controller.doctorQualification.value, const Color(0xFF3B82F6)),
+              _buildDialogRow(Icons.credit_card_rounded, 'GIẤY PHÉP HÀNH NGHỀ', controller.doctorLicense.value, const Color(0xFF8B5CF6)),
+              _buildDialogRow(Icons.medical_services_rounded, 'CHUYÊN KHOA', spec, const Color(0xFFEC4899)),
+              _buildDialogRow(Icons.location_city_rounded, 'NƠI ĐÀO TẠO CHUYÊN SÂU', controller.doctorSchool.value, const Color(0xFF3B82F6)),
+              _buildDialogRow(Icons.workspace_premium_rounded, 'THÂM NIÊN LÂM SÀNG', '${controller.doctorExperience.value} năm kinh nghiệm', const Color(0xFF10B981)),
+              _buildDialogRow(Icons.auto_awesome_rounded, 'CHUYÊN KHOA SÂU', controller.doctorSubSpecialization.value, const Color(0xFFFBBF24)),
+              _buildDialogRow(Icons.center_focus_strong_rounded, 'CHUYÊN MÔN LÂM SÀNG', controller.doctorClinicalFocus.value, const Color(0xFF38BDF8)),
+              _buildDialogRow(Icons.card_membership_rounded, 'CHỨNG CHỈ CME ĐÃ CẤP', controller.doctorCertificates.value, const Color(0xFF10B981)),
+              
+              const SizedBox(height: 18),
+              _buildDialogSectionHeader('LIÊN HỆ KHẨN CẤP & CÁ NHÂN'),
+              const SizedBox(height: 8),
+              _buildDialogRow(Icons.phone_iphone_rounded, 'SỐ ĐIỆN THOẠI DI ĐỘNG', controller.doctorPhone.value, const Color(0xFF10B981)),
+              _buildDialogRow(Icons.email_rounded, 'THƯ ĐIỆN TỬ', email, const Color(0xFF38BDF8)),
+              _buildDialogRow(Icons.contact_phone_rounded, 'LIÊN HỆ NGƯỜI THÂN BÁC SĨ', '${controller.doctorEmergencyName.value} - ${controller.doctorEmergencyPhone.value}', const Color(0xFFEF4444)),
+              
+              const SizedBox(height: 18),
+              _buildDialogSectionHeader('LỊCH TRÌNH & ĐÁNH GIÁ'),
+              const SizedBox(height: 8),
+              _buildDialogRow(Icons.calendar_month_rounded, 'CA TRỰC ĐĂNG KÝ', 'Sáng (07:30 - 11:30) | Chiều (13:30 - 17:30)', const Color(0xFF38BDF8)),
+              _buildDialogRow(Icons.monetization_on_rounded, 'MỨC PHÍ TƯ VẤN', '150.000 đ', const Color(0xFF10B981)),
+              _buildDialogRow(Icons.star_rounded, 'ĐÁNH GIÁ TRUNG BÌNH', '4.9 ★ (128 phản hồi bệnh nhân)', const Color(0xFFFBBF24)),
+            ],
+          ),
+        ),
+        actions: [
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF0D9488),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () => Get.back(),
+            child: const Text('ĐÓNG HỒ SƠ', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDialogSectionHeader(String title) {
+    return Row(
+      children: [
+        Container(
+          width: 3,
+          height: 8,
+          decoration: BoxDecoration(
+            color: const Color(0xFF0D9488),
+            borderRadius: BorderRadius.circular(1.5),
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          title,
+          style: const TextStyle(
+            color: Color(0xFF0D9488),
+            fontSize: 9,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 0.5,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDialogRow(IconData icon, String label, String value, Color color) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: color, size: 14),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(color: Color(0xFF64748B), fontSize: 8, fontWeight: FontWeight.w900),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

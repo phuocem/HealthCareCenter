@@ -213,9 +213,24 @@ class DashboardView extends GetView<DashboardController> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'TỔNG QUAN DOANH THU & KHOA',
-            style: TextStyle(color: Color(0xFF64748B), fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 1.2),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'TỔNG QUAN DOANH THU & KHOA',
+                style: TextStyle(color: Color(0xFF64748B), fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 1.2),
+              ),
+              GestureDetector(
+                onTap: () => Get.toNamed(Routes.ADMIN_ANALYTICS),
+                child: const Row(
+                  children: [
+                    Text('PHÂN TÍCH BI', style: TextStyle(color: Color(0xFF38BDF8), fontSize: 9, fontWeight: FontWeight.bold)),
+                    SizedBox(width: 4),
+                    Icon(Icons.analytics_rounded, color: Color(0xFF38BDF8), size: 12),
+                  ],
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 8),
           Text(
